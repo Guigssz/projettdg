@@ -9,6 +9,5 @@ public class Main {
         nombre = sc.nextInt();
         System.out.println("Vous avez choisit le graphe : " + nombre);
         sc.close();
-
     }
 }
