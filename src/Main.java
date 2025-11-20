@@ -1,6 +1,8 @@
 import java.util.Scanner;
 import javax.swing.*;
 import java.awt.*; // pour interface graphique
+
+
 public class Main {
     public static void main(String[] args) {
         int nombre;

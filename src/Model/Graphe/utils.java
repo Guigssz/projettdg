@@ -2,18 +2,52 @@ package Model.Graphe;
 
 import java.io.*;
 import java.util.*;
+import java.nio.file.*;
 
 
 public class utils {
 
 
-    public static void ajcmat_to_goodformat(){
+
+    public static void adjmat_to_goodformat() throws IOException {
+
+        // Permet de convertir une matrice adjacente (avec le bon format) en une liste d'arrête avec toutes les données nécessaire.
+        // fichier de base : nombre de sommet, matricea adjacente
+        // fichier out : list d'arrête avec les infos avec le format : predecesseur successeur poids orienté (boolen)
 
 
+        // /!\ Marche seulement pour du non orianté
 
+        //Faut changer à chaque fois les chemins ici
+        String fichierin = "data/test/adj1.txt";
+
+        List<String> lines = Files.readAllLines(Paths.get(fichierin));
+
+        int n = Integer.parseInt(lines.get(0).trim());
+        double[][] adjmatrice = new double[n][n];
+
+        for (int i = 1; i <= n; i++) {
+            String[] info = lines.get(i).trim().split("\\s+");
+            for (int j = 0; j < n; j++) {
+                adjmatrice[i - 1][j] = Double.parseDouble(info[j]);
+            }
+        }
+
+        PrintWriter pw = new PrintWriter(fichierin);
+
+        pw.println(n);
+
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                if (adjmatrice[i][j] != 0) {
+                    pw.println(i + " " + j + " " + adjmatrice[i][j] + " 0");
+                }
+            }
+        }
+
+        pw.close();
 
     }
-
 
     public static void convertadjmat(){
 
@@ -75,7 +109,12 @@ public class utils {
 
     public static void main(String[] args){
 
-        utils.convertadjmat();
+        try {
+            adjmat_to_goodformat();
+            System.out.println("Conversion ok");
+        } catch (Exception e) {
+            System.err.println("Oupsidoupsi : " + e.getMessage());
+        }
 
     }
 
