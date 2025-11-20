@@ -1,5 +1,8 @@
 package Model.Graphe;
 
+import Model.Algo.*;
+import Model.ResultatCommun.*;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -59,9 +62,7 @@ public class Graphe {
         Liaison l1 = new Liaison(pred, succ, poids, false);
         Liaison l2 = new Liaison(succ, pred, poids, false); // pour l’autre sens
 
-
         liaisons.add(l1);
-
 
         adjlist.get(pred).add(l1);
         adjlist.get(succ).add(l2);
@@ -100,11 +101,22 @@ public class Graphe {
 
         String fichierin = "data/test/adj1.txt";
 
+        // test de dijkstra
         try {
             Graphe graphe = chargerGraphe(fichierin);
             graphe.afficherLiaisons();
             System.out.println();
             graphe.afficherAdj();
+
+            System.out.println();
+
+            Sommet depart = graphe.getSommet(0);
+            Sommet arrive = graphe.getSommet(2);
+
+            Itineraire itin = Dijkstra.dijkstra(graphe, depart, arrive);
+
+            itin.afficher();
+
         } catch (Exception e) {
             System.err.println("Oupsidoupsi : " + e.getMessage());
         }
