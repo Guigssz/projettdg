@@ -9,15 +9,19 @@ public class Graphe {
     private final int nb_sommet;
     private final List<Sommet> sommets;
     private final List<Liaison> liaisons;
+    private final Map<Sommet, List<Liaison>> adjlist;
 
     public Graphe(int nb_sommet) {
 
         this.nb_sommet = nb_sommet;
         this.sommets = new ArrayList<>();
         this.liaisons = new ArrayList<>();
+        this.adjlist = new HashMap<>();
 
         for (int i = 0; i < nb_sommet; i++) {
-            sommets.add(new Sommet(i));
+            Sommet s = new Sommet(i);
+            sommets.add(s);
+            adjlist.put(s, new ArrayList<>());
         }
 
     }
@@ -51,8 +55,16 @@ public class Graphe {
     }
 
     public void ajouterLiaison(Sommet pred, Sommet succ, double poids) {
-        Liaison liaison = new Liaison(pred, succ, poids,false);
-        liaisons.add(liaison);
+
+        Liaison l1 = new Liaison(pred, succ, poids, false);
+        Liaison l2 = new Liaison(succ, pred, poids, false); // pour l’autre sens
+
+
+        liaisons.add(l1);
+
+
+        adjlist.get(pred).add(l1);
+        adjlist.get(succ).add(l2);
     }
 
 
@@ -60,11 +72,26 @@ public class Graphe {
         return sommets.get(id);
     }
 
+    public Map<Sommet, List<Liaison>> getAdj() {
+        return adjlist;
+    }
+
     public void afficherLiaisons() {
 
         System.out.println("Liaisons du graphe:");
         for (Liaison l : liaisons) {
             System.out.println(l.getPred().getId() + " -- " + l.getSucc().getId() + " Poids : " + l.getPoids());
+        }
+    }
+
+    public void afficherAdj() {
+        System.out.println("Adjacency list :");
+        for (Sommet s : sommets) {
+            System.out.print(s.getId() + " : ");
+            for (Liaison l : adjlist.get(s)) {
+                System.out.print(l.getSucc().getId() + " Poids : " + l.getPoids() + " | ");
+            }
+            System.out.println();
         }
     }
 
@@ -76,6 +103,8 @@ public class Graphe {
         try {
             Graphe graphe = chargerGraphe(fichierin);
             graphe.afficherLiaisons();
+            System.out.println();
+            graphe.afficherAdj();
         } catch (Exception e) {
             System.err.println("Oupsidoupsi : " + e.getMessage());
         }
