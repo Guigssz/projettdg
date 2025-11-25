@@ -32,7 +32,7 @@ public class Graphe {
     public static Graphe chargerGraphe(String fichierin) throws Exception {
 
         List<String> lines = Files.readAllLines(Paths.get(fichierin));
-        int n = Integer.parseInt(lines.get(0));
+        int n = Integer.parseInt(lines.get(0).trim());
 
         Graphe graphe = new Graphe(n);
 
@@ -40,7 +40,18 @@ public class Graphe {
 
             String line = lines.get(i).trim();
 
+            // 🔹 Ignore les lignes vides
+            if (line.isEmpty()) {
+                continue;
+            }
+
+            // Sépare par espaces / tab / etc.
             String[] info = line.split("\\s+");
+
+            // 🔹 Sécurité : vérifier qu'on a bien au moins 3 valeurs
+            if (info.length < 3) {
+                throw new Exception("Ligne " + (i + 1) + " invalide dans le fichier : \"" + line + "\"");
+            }
 
             int id_pred = Integer.parseInt(info[0]);
             int id_succ = Integer.parseInt(info[1]);
@@ -49,13 +60,12 @@ public class Graphe {
             Sommet pred = graphe.getSommet(id_pred);
             Sommet succ = graphe.getSommet(id_succ);
 
-
-            graphe.ajouterLiaison(pred,succ,poids);
-
+            graphe.ajouterLiaison(pred, succ, poids);
         }
 
         return graphe;
     }
+
 
     public void ajouterLiaison(Sommet pred, Sommet succ, double poids) {
 
