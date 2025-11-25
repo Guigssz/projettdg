@@ -40,15 +40,13 @@ public class Graphe {
 
             String line = lines.get(i).trim();
 
-            // 🔹 Ignore les lignes vides
             if (line.isEmpty()) {
                 continue;
             }
 
-            // Sépare par espaces / tab / etc.
+
             String[] info = line.split("\\s+");
 
-            // 🔹 Sécurité : vérifier qu'on a bien au moins 3 valeurs
             if (info.length < 3) {
                 throw new Exception("Ligne " + (i + 1) + " invalide dans le fichier : \"" + line + "\"");
             }
