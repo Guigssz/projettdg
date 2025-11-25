@@ -1,7 +1,6 @@
-
-
 import javax.swing.SwingUtilities;
-
+import View.GraphView;
+import Controller.GraphController;
 
 public class Main {
 
@@ -13,5 +12,6 @@ public class Main {
         });
     }
 }
+
 
 

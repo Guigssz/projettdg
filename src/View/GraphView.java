@@ -1,14 +1,16 @@
+package View;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class GraphView extends JFrame {
 
-    JComboBox<String> fileComboBox;
-    JComboBox<String> algoComboBox;
-    JTextField departField;
-    JTextField arriveeField;
-    JTextArea outputArea;
-    JButton runButton;
+    public JComboBox<String> fileComboBox;
+    public JComboBox<String> algoComboBox;
+    public JTextField departField;
+    public JTextField arriveeField;
+    public JTextArea outputArea;
+    public JButton runButton;
 
     public GraphView() {
         super("Projet TDG - Interface graphique (MVC)");
@@ -58,3 +60,4 @@ public class GraphView extends JFrame {
         add(runButton, BorderLayout.SOUTH);
     }
 }
+

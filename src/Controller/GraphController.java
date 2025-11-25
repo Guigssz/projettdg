@@ -1,7 +1,9 @@
+package Controller;
+
 import java.awt.event.ActionEvent;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.PrintStream;
+import java.io.*;
+
+import View.GraphView;
 
 import Model.Graphe.Graphe;
 import Model.Graphe.Sommet;
@@ -16,12 +18,10 @@ public class GraphController {
     public GraphController(GraphView view) {
         this.view = view;
 
-        // Remplit la liste des fichiers
         view.fileComboBox.setModel(
                 new javax.swing.DefaultComboBoxModel<>(scanTestFiles("data/test"))
         );
 
-        // Branche le bouton
         view.runButton.addActionListener(this::onRunClicked);
     }
 
@@ -34,9 +34,7 @@ public class GraphController {
             return;
         }
 
-        int idDepart;
-        int idArrivee;
-
+        int idDepart, idArrivee;
         try {
             idDepart = Integer.parseInt(view.departField.getText().trim());
             idArrivee = Integer.parseInt(view.arriveeField.getText().trim());
@@ -46,15 +44,11 @@ public class GraphController {
         }
 
         try {
-            // Chargement du graphe
-            String path = "data/test/" + fileName;
-            Graphe g = Graphe.chargerGraphe(path);
-
+            Graphe g = Graphe.chargerGraphe("data/test/" + fileName);
             Sommet depart = g.getSommet(idDepart);
             Sommet arrivee = g.getSommet(idArrivee);
 
             Itineraire itineraire = null;
-
             if ("Dijkstra".equals(algoName)) {
                 itineraire = Dijkstra.dijkstra(g, depart, arrivee);
             } else if ("BFS".equals(algoName)) {
@@ -64,8 +58,7 @@ public class GraphController {
             if (itineraire == null) {
                 view.outputArea.setText("Aucun chemin trouvé.");
             } else {
-                String texte = captureAffichageItineraire(itineraire);
-                view.outputArea.setText(texte);
+                view.outputArea.setText(captureAffichageItineraire(itineraire));
             }
 
         } catch (Exception ex) {
@@ -88,12 +81,10 @@ public class GraphController {
         if (!folder.exists() || !folder.isDirectory()) {
             return new String[]{"(aucun fichier trouvé)"};
         }
-
         String[] files = folder.list((dir, name) -> new File(dir, name).isFile());
-        if (files == null || files.length == 0) {
-            return new String[]{"(aucun fichier trouvé)"};
-        }
-        return files;
+        return (files == null || files.length == 0)
+                ? new String[]{"(aucun fichier trouvé)"}
+                : files;
     }
 
     private String captureAffichageItineraire(Itineraire itineraire) {
