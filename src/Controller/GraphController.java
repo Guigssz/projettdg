@@ -1,15 +1,17 @@
 package Controller;
 
+import View.GraphView;
+
 import java.awt.event.ActionEvent;
 import java.io.*;
-
-import View.GraphView;
 
 import Model.Graphe.Graphe;
 import Model.Graphe.Sommet;
 import Model.Algo.Dijkstra;
 import Model.Algo.BFS;
 import Model.ResultatCommun.Itineraire;
+
+import javax.swing.*;
 
 public class GraphController {
 
@@ -18,61 +20,119 @@ public class GraphController {
     public GraphController(GraphView view) {
         this.view = view;
 
-        view.fileComboBox.setModel(
-                new javax.swing.DefaultComboBoxModel<>(scanTestFiles("data/test"))
-        );
+        // On charge la liste des fichiers dans les deux onglets
+        String[] files = scanTestFiles("data/test");
+        view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(files));
+        view.fileComboEntreprise.setModel(new DefaultComboBoxModel<>(files));
 
-        view.runButton.addActionListener(this::onRunClicked);
+        // On branche les deux boutons "Calculer"
+        view.runButtonCollectivite.addActionListener(e -> onRunClickedCollectivite(e));
+        view.runButtonEntreprise.addActionListener(e -> onRunClickedEntreprise(e));
     }
 
-    private void onRunClicked(ActionEvent e) {
-        String fileName = (String) view.fileComboBox.getSelectedItem();
-        String algoName = (String) view.algoComboBox.getSelectedItem();
+    // ----- LOGIQUE : Collectivité -----
+    private void onRunClickedCollectivite(ActionEvent e) {
+        String fileName = (String) view.fileComboCollectivite.getSelectedItem();
+        String algoName = (String) view.algoComboCollectivite.getSelectedItem();
+        String departText = view.departFieldCollectivite.getText();
+        String arriveeText = view.arriveeFieldCollectivite.getText();
+
+        runItineraire(
+                fileName,
+                algoName,
+                departText,
+                arriveeText,
+                view.outputAreaCollectivite,
+                "Collectivité --> Particulier"
+        );
+    }
+
+    // ----- LOGIQUE : Entreprise -----
+    private void onRunClickedEntreprise(ActionEvent e) {
+        String fileName = (String) view.fileComboEntreprise.getSelectedItem();
+        String algoName = (String) view.algoComboEntreprise.getSelectedItem();
+        String departText = view.departFieldEntreprise.getText();
+        String arriveeText = view.arriveeFieldEntreprise.getText();
+
+        runItineraire(
+                fileName,
+                algoName,
+                departText,
+                arriveeText,
+                view.outputAreaEntreprise,
+                "Depot --> Point de collecte"
+        );
+    }
+
+    private void runItineraire(String fileName,
+                               String algoName,
+                               String departText,
+                               String arriveeText,
+                               JTextArea outputArea,
+                               String headerContexte) {
 
         if (fileName == null || fileName.startsWith("(aucun")) {
             showError("Aucun fichier de graphe trouvé dans data/test.");
             return;
         }
 
-        int idDepart, idArrivee;
+        int idDepart;
+        int idArrivee;
+
         try {
-            idDepart = Integer.parseInt(view.departField.getText().trim());
-            idArrivee = Integer.parseInt(view.arriveeField.getText().trim());
+            idDepart = Integer.parseInt(departText.trim());
+            idArrivee = Integer.parseInt(arriveeText.trim());
         } catch (NumberFormatException ex) {
             showError("Les ids de départ / arrivée doivent être des entiers.");
             return;
         }
 
         try {
-            Graphe g = Graphe.chargerGraphe("data/test/" + fileName);
+            String path = "data/test/" + fileName;
+            Graphe g = Graphe.chargerGraphe(path);
+
             Sommet depart = g.getSommet(idDepart);
             Sommet arrivee = g.getSommet(idArrivee);
 
             Itineraire itineraire = null;
+
             if ("Dijkstra".equals(algoName)) {
                 itineraire = Dijkstra.dijkstra(g, depart, arrivee);
             } else if ("BFS".equals(algoName)) {
                 itineraire = BFS.bfs(g, depart, arrivee);
             }
 
+            outputArea.setText("");
+
             if (itineraire == null) {
-                view.outputArea.setText("Aucun chemin trouvé.");
+                outputArea.setText("Aucun chemin trouvé.");
             } else {
-                view.outputArea.setText(captureAffichageItineraire(itineraire));
+                String texte = captureAffichageItineraire(itineraire);
+
+                StringBuilder sb = new StringBuilder();
+                sb.append(headerContexte).append("\n");
+                sb.append("Fichier : ").append(fileName).append("\n");
+                sb.append("Algorithme : ").append(algoName).append("\n");
+                sb.append("----------------------------------------\n");
+                sb.append(texte);
+
+                outputArea.setText(sb.toString());
             }
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            view.outputArea.setText("Erreur : " + ex.getMessage());
+            outputArea.setText("Erreur : " + ex.getMessage());
         }
     }
 
+    // ----------- Utilitaires -----------
+
     private void showError(String message) {
-        javax.swing.JOptionPane.showMessageDialog(
+        JOptionPane.showMessageDialog(
                 null,
                 message,
                 "Erreur",
-                javax.swing.JOptionPane.ERROR_MESSAGE
+                JOptionPane.ERROR_MESSAGE
         );
     }
 
@@ -81,10 +141,12 @@ public class GraphController {
         if (!folder.exists() || !folder.isDirectory()) {
             return new String[]{"(aucun fichier trouvé)"};
         }
+
         String[] files = folder.list((dir, name) -> new File(dir, name).isFile());
-        return (files == null || files.length == 0)
-                ? new String[]{"(aucun fichier trouvé)"}
-                : files;
+        if (files == null || files.length == 0) {
+            return new String[]{"(aucun fichier trouvé)"};
+        }
+        return files;
     }
 
     private String captureAffichageItineraire(Itineraire itineraire) {
@@ -103,4 +165,3 @@ public class GraphController {
         return baos.toString();
     }
 }
-
