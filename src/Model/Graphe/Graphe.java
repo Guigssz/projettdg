@@ -107,27 +107,6 @@ public class Graphe {
 
     public static void main(String[] args){
 
-        String fichierin = "data/test/adj1.txt";
-
-        // test de dijkstra
-        try {
-            Graphe graphe = chargerGraphe(fichierin);
-            graphe.afficherLiaisons();
-            System.out.println();
-            graphe.afficherAdj();
-
-            System.out.println();
-
-            Sommet depart = graphe.getSommet(0);
-            Sommet arrive = graphe.getSommet(2);
-
-            Itineraire itin = Dijkstra.dijkstra(graphe, depart, arrive);
-
-            itin.afficher();
-
-        } catch (Exception e) {
-            System.err.println("Oupsidoupsi : " + e.getMessage());
-        }
 
 
     }
