@@ -1,6 +1,5 @@
 package Model.Algo;
 
-
 import Model.Graphe.*;
 import Model.ResultatCommun.*;
 
@@ -20,10 +19,19 @@ public class BFS {
 
         // fil fifo
         LinkedList<Liaison> file = new LinkedList<>();
-        // On ajoute les liaisons sortantes du départ
+
+        // liaison départ
         for (Liaison lien : g.getAdj().get(depart)) {
             file.addLast(lien);
+
+        if (lien.getOriente() && lien.getPred() != depart) {
+            continue;
         }
+
+        file.addLast(lien);
+    }
+
+
 
         boolean trouve = false;
 
@@ -51,6 +59,14 @@ public class BFS {
                 // Sinon on ajoute all liaisons sortantes de actuelle
                 for (Liaison lien2 : g.getAdj().get(actuelle)) {
                     file.addLast(lien2);
+
+
+                        // ⚠️ graphe orienté : respecter le sens
+                        if (lien2.getOriente() && lien2.getPred() != actuelle) {
+                            continue; // mauvais sens
+                        }
+
+                        file.addLast(lien2);
                 }
             }
         }
@@ -94,7 +110,7 @@ public class BFS {
     }
 
 
-    // main de test fait par C
+
     public static void main(String[] args) {
 
         String fichierin = "data/test/adj1.txt";

@@ -9,6 +9,9 @@ import java.util.*;
 
 public class Graphe {
 
+    private boolean oriente = false;
+    public boolean isOriente() { return oriente; }
+
     private final int nb_sommet;
     private final List<Sommet> sommets;
     private final List<Liaison> liaisons;
@@ -44,26 +47,36 @@ public class Graphe {
                 continue;
             }
 
-
             String[] info = line.split("\\s+");
 
-            if (info.length < 3) {
+            // On veut 4 colonnes : pred succ poids oriente(0/1)
+            if (info.length < 4) {
                 throw new Exception("Ligne " + (i + 1) + " invalide dans le fichier : \"" + line + "\"");
             }
 
             int id_pred = Integer.parseInt(info[0]);
             int id_succ = Integer.parseInt(info[1]);
             double poids = Double.parseDouble(info[2]);
+            int flag = Integer.parseInt(info[3]);      // 0 ou 1
+
+            boolean estOriente = (flag == 1);         // true si sens unique
 
             Sommet pred = graphe.getSommet(id_pred);
             Sommet succ = graphe.getSommet(id_succ);
 
-            graphe.ajouterLiaison(pred, succ, poids);
+            if (estOriente) {
+                // sens unique pred -> succ
+                graphe.ajouterLiaisonOriente(pred, succ, poids);
+                // si tu veux garder l'info globalement :
+                graphe.oriente = true; // (champ à ajouter dans la classe)
+            } else {
+                // double sens (ton comportement actuel)
+                graphe.ajouterLiaison(pred, succ, poids);
+            }
         }
 
         return graphe;
     }
-
 
     public void ajouterLiaison(Sommet pred, Sommet succ, double poids) {
 
@@ -75,6 +88,17 @@ public class Graphe {
         adjlist.get(pred).add(l1);
         adjlist.get(succ).add(l2);
     }
+    // Pour les rues à sens unique pred -> succ
+    public void ajouterLiaisonOriente(Sommet pred, Sommet succ, double poids) {
+
+        Liaison l1 = new Liaison(pred, succ, poids, true);
+
+        liaisons.add(l1);
+
+        // on n'ajoute que dans la liste des sorties de pred
+        adjlist.get(pred).add(l1);
+    }
+
 
 
     public Sommet getSommet(int id){
