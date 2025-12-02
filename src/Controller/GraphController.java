@@ -13,6 +13,13 @@ import Model.ResultatCommun.Itineraire;
 
 import javax.swing.*;
 
+/**
+ * Contrôleur principal.
+ *
+ * - Onglet "Test"  : permet de lancer directement Dijkstra / BFS sur les fichiers de /data/test
+ * - Onglet "Appli" : habille ces mêmes algorithmes avec la vision "Collectivité / Particulier"
+ *                    et les différents thèmes / hypothèses du sujet.
+ */
 public class GraphController {
 
     private final GraphView view;
@@ -20,49 +27,131 @@ public class GraphController {
     public GraphController(GraphView view) {
         this.view = view;
 
-        // On charge la liste des fichiers dans les deux onglets
+        // ------- Alimentation de l'onglet TEST -------
         String[] files = scanTestFiles("data/test");
-        view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(files));
-        view.fileComboEntreprise.setModel(new DefaultComboBoxModel<>(files));
+        view.fileComboTest.setModel(new DefaultComboBoxModel<>(files));
 
-        // On branche les deux boutons "Calculer"
-        view.runButtonCollectivite.addActionListener(e -> onRunClickedCollectivite(e));
-        view.runButtonEntreprise.addActionListener(e -> onRunClickedEntreprise(e));
+        // ------- Comportement de l'onglet TEST -------
+        view.runButtonTest.addActionListener(this::onRunClickedTest);
+
+        // ------- Comportement de l'onglet APPLI -------
+        // On met à jour la liste des hypothèses à chaque changement de thème
+        view.themeCombo.addActionListener(e -> updateHypothesesModel());
+
+        // Bouton principal de l'onglet "Appli"
+        view.runButtonAppli.addActionListener(this::onRunClickedAppli);
+
+        // Initialisation des hypothèses au démarrage
+        updateHypothesesModel();
     }
 
-    // ----- LOGIQUE : Collectivité -----
-    private void onRunClickedCollectivite(ActionEvent e) {
-        String fileName = (String) view.fileComboCollectivite.getSelectedItem();
-        String algoName = (String) view.algoComboCollectivite.getSelectedItem();
-        String departText = view.departFieldCollectivite.getText();
-        String arriveeText = view.arriveeFieldCollectivite.getText();
+    // ============================================================
+    //  Onglet TEST
+    // ============================================================
+    private void onRunClickedTest(ActionEvent e) {
+        String fileName    = (String) view.fileComboTest.getSelectedItem();
+        String algoName    = (String) view.algoComboTest.getSelectedItem();
+        String departText  = view.departFieldTest.getText();
+        String arriveeText = view.arriveeFieldTest.getText();
 
         runItineraire(
                 fileName,
                 algoName,
                 departText,
                 arriveeText,
-                view.outputAreaCollectivite,
-                "Collectivité --> Particulier"
+                view.outputAreaTest,
+                "Mode TEST"
         );
     }
 
-    // ----- LOGIQUE : Entreprise -----
-    private void onRunClickedEntreprise(ActionEvent e) {
-        String fileName = (String) view.fileComboEntreprise.getSelectedItem();
-        String algoName = (String) view.algoComboEntreprise.getSelectedItem();
-        String departText = view.departFieldEntreprise.getText();
-        String arriveeText = view.arriveeFieldEntreprise.getText();
+    // ============================================================
+    //  Onglet APPLI
+    // ============================================================
 
+    /**
+     * Met à jour dynamiquement la liste des hypothèses en fonction du thème choisi.
+     * (mappage très simple basé sur l'énoncé ; libre à vous d'affiner ensuite)
+     */
+    private void updateHypothesesModel() {
+        Object sel = view.themeCombo.getSelectedItem();
+        String theme = (sel == null) ? "" : sel.toString();
+
+        String[] hypos;
+
+        if (theme.startsWith("Thème 1")) {
+            hypos = new String[]{
+                    "Hypothèse 1 : un seul ramassage (itinéraire le plus court)",
+                    "Hypothèse 2 : tournée limitée à une dizaine de ramassages"
+            };
+        } else if (theme.startsWith("Thème 2")) {
+            hypos = new String[]{
+                    "Hypothèse 1 : approche plus proche voisin",
+                    "Hypothèse 2 : approche MST + découpage par capacité"
+            };
+        } else if (theme.startsWith("Thème 3")) {
+            hypos = new String[]{
+                    "Hypothèse 1 : 2 secteurs voisins pas le même jour",
+                    "Hypothèse 2 : + contraintes de capacité / nb de camions"
+            };
+        } else {
+            // Cas par défaut
+            hypos = new String[]{
+                    "Hypothèse 1",
+                    "Hypothèse 2",
+                    "Hypothèse 3"
+            };
+        }
+
+        view.hypoCombo.setModel(new DefaultComboBoxModel<>(hypos));
+    }
+
+    private void onRunClickedAppli(ActionEvent e) {
+        String role  = (String) view.roleCombo.getSelectedItem();   // Collectivité / Particulier
+        String theme = (String) view.themeCombo.getSelectedItem();  // Thème 1 / 2 / 3 ...
+        String hypo  = (String) view.hypoCombo.getSelectedItem();   // Hypothèse choisie
+
+        // Pour l'instant, on réutilise la même mécanique que l'onglet "Test" :
+        // on demande à l'utilisateur de choisir fichier + algo dans l'onglet Test,
+        // puis on "contextualise" juste le résultat avec le rôle / thème / hypothèse.
+        //
+        // Plus tard, si tu crées des méthodes spécifiques pour chaque cas
+        // (ex : calculTournéesTheme2(), planificationTheme3(), etc.),
+        // tu pourras les appeler ici en fonction du trio (role, theme, hypo).
+
+        String fileName    = (String) view.fileComboTest.getSelectedItem();
+        String algoName    = (String) view.algoComboTest.getSelectedItem();
+        String departText  = view.departFieldTest.getText();
+        String arriveeText = view.arriveeFieldTest.getText();
+
+        if (fileName == null || algoName == null) {
+            showError("Veuillez d'abord choisir un fichier et un algorithme dans l'onglet Test.");
+            return;
+        }
+
+        // On effectue le calcul comme pour le mode test, mais en changeant le header.
         runItineraire(
                 fileName,
                 algoName,
                 departText,
                 arriveeText,
-                view.outputAreaEntreprise,
-                "Depot --> Point de collecte"
+                view.outputAreaAppli,
+                buildAppliHeader(role, theme, hypo)
         );
     }
+
+    private String buildAppliHeader(String role, String theme, String hypo) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Mode APPLI\n");
+        sb.append("Utilisateur : ").append(role == null ? "?" : role).append("\n");
+        sb.append("Thème      : ").append(theme == null ? "?" : theme).append("\n");
+        sb.append("Hypothèses : ").append(hypo == null ? "?" : hypo).append("\n");
+        sb.append("========================================\n");
+        return sb.toString();
+    }
+
+    // ============================================================
+    //  Partie commune : exécution des algos + gestion fichiers
+    // ============================================================
 
     private void runItineraire(String fileName,
                                String algoName,
@@ -125,8 +214,6 @@ public class GraphController {
         }
     }
 
-    // ----------- Utilitaires -----------
-
     private void showError(String message) {
         JOptionPane.showMessageDialog(
                 null,
@@ -165,3 +252,4 @@ public class GraphController {
         return baos.toString();
     }
 }
+
