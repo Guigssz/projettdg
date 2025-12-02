@@ -128,6 +128,25 @@ public class Graphe {
         }
     }
 
+    public Liaison getArrete(int a, int b) {
+
+        for (Liaison l : liaisons) {
+
+            int u = l.getPred().getId();
+            int v = l.getSucc().getId();
+
+            if ((u == a && v == b) || (u == b && v == a)) {
+                return l;
+            }
+        }
+
+        throw new RuntimeException("Aucune arête " + a + "-" + b + " trouvée !");
+    }
+
+
+    public List<Sommet> getSommets() {
+        return sommets;
+    }
 
     public static void main(String[] args){
 

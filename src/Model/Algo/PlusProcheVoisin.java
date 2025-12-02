@@ -1,105 +1,124 @@
 package Model.Algo;
 
+
 import Model.Graphe.*;
-import Model.ResultatCommun.Itineraire;
-import Model.Theme2.CalcDistances;
-import Model.Theme2.Tournee;
+import Model.Theme2.*;
+
 import java.util.*;
 
 public class PlusProcheVoisin {
 
+    public static Tournee ppv(
+            Map<Sommet, Map<Sommet, Double>> matDist,
+            Sommet depot,
+            List<PointCollecte> pcs)
+    {
+        List<PointCollecte> restants = new ArrayList<>(pcs);
+        List<Integer> ordrePoints = new ArrayList<>();
+        double total = 0;
 
-    public static Tournee ppv(Map<Sommet, Map<Sommet, Double>> matDist, Sommet depot, List<Sommet> pCollectes){
+        PointCollecte actuel = null; // null = au dépôt
 
+        while (!restants.isEmpty()) {
 
+            PointCollecte best = null;
+            double bestD = Double.MAX_VALUE;
 
-        List<Sommet> ordreTournee = new ArrayList<>();
-        ordreTournee.add(depot); // on commence au dépot logique
+            for (PointCollecte pc : restants) {
 
-        Set<Sommet> sommetAttentes = new HashSet<>(pCollectes); //copie de la liste
+                double d = (actuel == null)
+                        ? PointCollecte.distSommetToPC(matDist, depot, pc)
+                        : PointCollecte.distPCtoPC(matDist, actuel, pc);
 
-        Sommet actuel = depot;
-
-        while(sommetAttentes.isEmpty() == false){
-
-            Sommet next = null;
-            double minDist = 10000000.0;
-
-            for (Sommet temp : sommetAttentes) {
-
-                double dist = matDist.get(actuel).get(temp);
-
-                if (dist < minDist) {
-
-                    minDist = dist;
-                    next = temp;
-
+                if (d < bestD) {
+                    bestD = d;
+                    best = pc;
                 }
-
             }
 
-            ordreTournee.add(next);
-            sommetAttentes.remove(next);
-            actuel = next;
+            total += bestD;
+            ordrePoints.add(pcs.indexOf(best));
 
+            restants.remove(best);
+            actuel = best;
         }
 
-        ordreTournee.add(depot); // retour au bercail
+        // Retour au dépôt
+        total += PointCollecte.distSommetToPC(matDist, depot, actuel);
 
-        //calcul de la distance total
-        double distancetotal = 0;
-        for (int i = 0; i < ordreTournee.size() - 1; i++) {
-            Sommet a = ordreTournee.get(i);
-            Sommet b = ordreTournee.get(i+1);
-            distancetotal += matDist.get(a).get(b);
-        }
-
-        return new Tournee(depot, ordreTournee ,distancetotal);
-
+        return new Tournee(depot, ordrePoints, total);
     }
 
+    public static void main(String[] args) {
 
-    public static void main(String[] args){
+        String fichierin = "data/test/adjmarc.txt";
 
-        //Main de test
-
-        String fichierin = "data/test/adj1.txt";
-
-        // test de ppv
         try {
             Graphe graphe = Graphe.chargerGraphe(fichierin);
             graphe.afficherLiaisons();
             System.out.println();
             graphe.afficherAdj();
-
             System.out.println();
 
-            // Il faut choisir le sommet de depot et les sommet pCollectes
-            Sommet depot = graphe.getSommet(0);
+            Scanner sc = new Scanner(System.in);
 
-            List<Sommet> pCollectes = List.of(
-                    graphe.getSommet(1),
-                    graphe.getSommet(2),
-                    graphe.getSommet(3)
-            );
+            // ----- Choix du dépôt -----
+            System.out.print("Sommet du dépôt : ");
+            int idDepot = sc.nextInt();
+            Sommet depot = graphe.getSommet(idDepot);
 
-            // construire la matrice de distance entre les pcollectes et depot
-            CalcDistances matDist = new CalcDistances(graphe, depot, pCollectes);
-            matDist.calcMatDistance();
 
-            matDist.afficherMatDist();
+            // ----- Choix des points de collecte -----
+            System.out.print("Nombre de points de collecte : ");
+            int nb = sc.nextInt();
 
-            Tournee tournee = PlusProcheVoisin.ppv(matDist.getMatDistance(), depot, pCollectes);
+            List<PointCollecte> points = new ArrayList<>();
+
+            for (int i = 0; i < nb; i++) {
+
+                System.out.println("\nPoint de collecte " + (i + 1));
+
+                System.out.print("  Sommet U de l'arête : ");
+                int a = sc.nextInt();
+
+                System.out.print("  Sommet V de l'arête : ");
+                int b = sc.nextInt();
+
+                // on récupère l’arête
+                Liaison arete = graphe.getArrete(a, b);
+
+                System.out.println("  Longueur de l'arête " + a + "-" + b + " : " + arete.getPoids());
+
+                System.out.print("  Distance depuis U (" + a + ") : ");
+                double pos = sc.nextDouble();
+
+                // création du point
+                points.add(new PointCollecte(arete, pos));
+                System.out.println("  -> PC ajouté sur " + a + "-" + b + " à position " + pos);
+            }
+
+
+            // ----- Calcul de la matrice de distances -----
+            CalcDistances calc = new CalcDistances(graphe);
+            calc.calcMatDistance();
+            Map<Sommet, Map<Sommet, Double>> matDist = calc.getMatDistance();
+
+
+            // ----- Lancement du PPV -----
+            Tournee tournee = PlusProcheVoisin.ppv(matDist, depot, points);
+
+
+            // ----- Affichage -----
+            System.out.println("\n===== RÉSULTAT TSP APPROCHE PPV =====");
             tournee.afficher();
 
 
         } catch (Exception e) {
-            System.err.println("Oupsidoupsi : " + e.getMessage());
+            System.err.println("Erreur : " + e.getMessage());
+            e.printStackTrace();
         }
-
-
-
     }
+
 
 
 

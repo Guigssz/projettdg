@@ -107,7 +107,7 @@ public class Dijkstra {
 
     public static void main(String[] args){
 
-        String fichierin = "data/test/adj1.txt";
+        String fichierin = "data/test/adjmarc.txt";
 
         // test de dijkstra
         try {

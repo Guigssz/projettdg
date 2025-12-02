@@ -34,5 +34,12 @@ public class Itineraire {
 
     }
 
+    public double getDistanceTotal() {
+        return distancetotal;
+    }
 
-}
+    public List<Sommet> getListSommet() {
+        return listsommet;
+    }
+
+    }
