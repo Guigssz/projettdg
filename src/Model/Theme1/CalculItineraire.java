@@ -43,6 +43,8 @@ public class CalculItineraire {
     public static void main(String[] args) {
 
         try {
+            Scanner sc = new Scanner(System.in);
+
             // Charger un graphe simple
             String fichier = "data/test/adjmarc.txt";
             Graphe g = Graphe.chargerGraphe(fichier);
@@ -55,13 +57,25 @@ public class CalculItineraire {
             g.afficherAdj();
             System.out.println();
 
-            // Choisir le dépôt et une arête où se trouve l'encombrant
-            Sommet depot = g.getSommet(8);
-            Sommet A = g.getSommet(10);
-            Sommet B = g.getSommet(12);
 
-            // On récupère la liaison A-B dans la liste
+            // 🎯 Sélection du DEPOT
+            System.out.print("Entrez l'ID du sommet 'depot' : ");
+            int idDepot = sc.nextInt();
+            Sommet depot = g.getSommet(idDepot);
+
+            // 🎯 Sélection des extrémités A et B
+            System.out.print("Entrer l'ID du sommet A (extrémité 1 de l'arête) : ");
+            int idA = sc.nextInt();
+            Sommet A = g.getSommet(idA);
+
+            System.out.print("Entrer l'ID du sommet B (extrémité 2 de l'arête) : ");
+            int idB = sc.nextInt();
+            Sommet B = g.getSommet(idB);
+
+            // Vérifier si l'arête existe dans AU MOINS un sens
             Liaison AB = null;
+
+            // Tester A → B
             for (Liaison l : g.getAdj().get(A)) {
                 if (l.getSucc().equals(B)) {
                     AB = l;
@@ -69,19 +83,30 @@ public class CalculItineraire {
                 }
             }
 
+            // Si pas trouvé, tester B → A (au cas où ton graphe est orienté ou l'arête est ajoutée dans l'autre sens)
             if (AB == null) {
-                System.out.println("Erreur : l'arête A-B n'existe pas dans le graphe !");
+                for (Liaison l : g.getAdj().get(B)) {
+                    if (l.getSucc().equals(A)) {
+                        AB = l;
+                        break;
+                    }
+                }
+            }
+
+            // Toujours rien → erreur
+            if (AB == null) {
+                System.out.println("❌ Erreur : l'arête " + idA + " - " + idB + " n'existe pas dans le graphe !");
                 return;
             }
 
-            // Création de l'encombrant situé sur A-B
+            // Création de l'encombrant
             Encombrant e = new Encombrant(AB);
 
             // Calcul de l’itinéraire
             Itineraire itin = CalculItineraire.itineraireVersEncombrant(g, depot, e);
 
             // Affichage
-            System.out.println("=== Itineraire vers encombrant sur A-B ===");
+            System.out.println("\n=== Itineraire vers l'encombrant situé sur l'arête (" + idA + "," + idB + ") ===");
             itin.afficher();
 
         } catch (Exception e) {
