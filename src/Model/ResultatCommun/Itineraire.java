@@ -42,4 +42,8 @@ public class Itineraire {
         return listsommet;
     }
 
+    public Sommet getArrivee(){
+        return arrivee;
+    }
+
     }

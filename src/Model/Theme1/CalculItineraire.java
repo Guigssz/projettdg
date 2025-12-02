@@ -38,44 +38,89 @@ public class CalculItineraire {
         }
     }
 
+    public static Itineraire itineraireTSPEncombrants(Graphe g, Sommet depot, List<Encombrant> encombrants) {
 
+        List<Sommet> cheminTotal = new ArrayList<>();
+        double distanceTotal = 0.0;
 
-    public static void main(String[] args) {
+        // Position courante = depot
+        Sommet positionCourante = depot;
+
+        // Liste mutable
+        List<Encombrant> restants = new ArrayList<>(encombrants);
+
+        cheminTotal.add(depot);
+
+        while (!restants.isEmpty()) {
+
+            Encombrant meilleur = null;
+            Itineraire meilleurItin = null;
+            double meilleurCout = Double.MAX_VALUE;
+
+            // 1️⃣ Chercher l'encombrant le plus proche
+            for (Encombrant e : restants) {
+
+                // Aller de la position courante vers cet encombrant
+                Itineraire itin = CalculItineraire.itineraireVersEncombrant(g, positionCourante, e);
+
+                if (itin.getDistanceTotal() < meilleurCout) {
+                    meilleurCout = itin.getDistanceTotal();
+                    meilleur = e;
+                    meilleurItin = itin;
+                }
+            }
+
+            // 2️⃣ Ajouter le chemin trouvé au chemin total
+            // éviter de dupliquer le premier sommet
+            List<Sommet> ch = meilleurItin.getListSommet();
+            for (int i = 1; i < ch.size(); i++) {
+                cheminTotal.add(ch.get(i));
+            }
+
+            distanceTotal += meilleurCout;
+
+            // 3️⃣ Mise à jour de la position courante (extrémité de l'arête traversée)
+            positionCourante = meilleurItin.getArrivee();
+
+            // 4️⃣ On enlève cet encombrant de la liste
+            restants.remove(meilleur);
+        }
+
+        // Itinéraire global
+        return new Itineraire(depot, positionCourante, cheminTotal, distanceTotal);
+    }
+
+    public static void mainHypothese1() {
+
+        //Un seul ramassage à la fois. Il faut déterminer
+        //l’itinéraire le plus court permettant de se rendre chez un
+        //particulier.
+
 
         try {
             Scanner sc = new Scanner(System.in);
 
-            // Charger un graphe simple
             String fichier = "data/test/adjmarc.txt";
             Graphe g = Graphe.chargerGraphe(fichier);
 
-            System.out.println("=== Liaisons du graphe ===");
-            g.afficherLiaisons();
-            System.out.println();
-
-            System.out.println("=== Liste d'adjacence ===");
+            System.out.println("=== Graphe chargé ===");
             g.afficherAdj();
             System.out.println();
 
-
-            // 🎯 Sélection du DEPOT
-            System.out.print("Entrez l'ID du sommet 'depot' : ");
+            // Choix du dépôt
+            System.out.print("Entrez l'ID du sommet de départ (dépôt) : ");
             int idDepot = sc.nextInt();
             Sommet depot = g.getSommet(idDepot);
 
-            // 🎯 Sélection des extrémités A et B
-            System.out.print("Entrer l'ID du sommet A (extrémité 1 de l'arête) : ");
-            int idA = sc.nextInt();
-            Sommet A = g.getSommet(idA);
+            // Choix A et B
+            System.out.print("Entrez l'ID du sommet A (extrémité 1 de l'arête) : ");
+            Sommet A = g.getSommet(sc.nextInt());
 
-            System.out.print("Entrer l'ID du sommet B (extrémité 2 de l'arête) : ");
-            int idB = sc.nextInt();
-            Sommet B = g.getSommet(idB);
+            System.out.print("Entrez l'ID du sommet B (extrémité 2 de l'arête) : ");
+            Sommet B = g.getSommet(sc.nextInt());
 
-            // Vérifier si l'arête existe dans AU MOINS un sens
+            // Vérification existence arête
             Liaison AB = null;
-
-            // Tester A → B
             for (Liaison l : g.getAdj().get(A)) {
                 if (l.getSucc().equals(B)) {
                     AB = l;
@@ -83,34 +128,116 @@ public class CalculItineraire {
                 }
             }
 
-            // Si pas trouvé, tester B → A (au cas où ton graphe est orienté ou l'arête est ajoutée dans l'autre sens)
             if (AB == null) {
-                for (Liaison l : g.getAdj().get(B)) {
-                    if (l.getSucc().equals(A)) {
+                System.out.println("❌ Erreur : l'arête A-B n'existe pas.");
+                return;
+            }
+
+            // Encombrant
+            Encombrant e = new Encombrant(AB);
+
+            // Calcul
+            Itineraire itin = itineraireVersEncombrant(g, depot, e);
+
+            // Affichage
+            System.out.println("\n=== Résultat Hypothèse 1 ===");
+            itin.afficher();
+
+        } catch (Exception e) {
+            System.err.println("Erreur Hypothèse 1 : " + e.getMessage());
+        }
+    }
+
+    public static void mainHypothese2() {
+
+        //La mairie regroupe les demandes et propose des
+        //dates de tournées de ramassages. Une tournée est limitée à une
+        //dizaine de ramassages. Il faut calculer l’itinéraire le plus
+        //court permettant de passer chez chaque particulier de la liste
+        //en une seule tournée
+
+        try {
+            Scanner sc = new Scanner(System.in);
+
+            String fichier = "data/test/adjmarc.txt";
+            Graphe g = Graphe.chargerGraphe(fichier);
+
+            System.out.println("=== Graphe chargé ===");
+            g.afficherAdj();
+            System.out.println();
+
+            // Choix du dépôt
+            System.out.print("Entrez l'ID du sommet de départ (dépôt) : ");
+            Sommet depot = g.getSommet(sc.nextInt());
+
+            // Nombre d’encombrants
+            System.out.print("Combien d'encombrants voulez-vous créer ? ");
+            int nb = sc.nextInt();
+
+            List<Encombrant> liste = new ArrayList<>();
+
+            for (int i = 1; i <= nb; i++) {
+                System.out.println("\n--- Encombrant " + i + " ---");
+
+                System.out.print("Sommet A : ");
+                Sommet A = g.getSommet(sc.nextInt());
+
+                System.out.print("Sommet B : ");
+                Sommet B = g.getSommet(sc.nextInt());
+
+                // Chercher l'arête
+                Liaison AB = null;
+                for (Liaison l : g.getAdj().get(A)) {
+                    if (l.getSucc().equals(B)) {
                         AB = l;
                         break;
                     }
                 }
+
+                if (AB == null) {
+                    System.out.println("❌ L'arête n'existe pas, je passe.");
+                } else {
+                    liste.add(new Encombrant(AB));
+                }
             }
 
-            // Toujours rien → erreur
-            if (AB == null) {
-                System.out.println("❌ Erreur : l'arête " + idA + " - " + idB + " n'existe pas dans le graphe !");
+            if (liste.isEmpty()) {
+                System.out.println("Aucun encombrant valide.");
                 return;
             }
 
-            // Création de l'encombrant
-            Encombrant e = new Encombrant(AB);
-
-            // Calcul de l’itinéraire
-            Itineraire itin = CalculItineraire.itineraireVersEncombrant(g, depot, e);
+            // Calcul PPV
+            Itineraire itin = itineraireTSPEncombrants(g, depot, liste);
 
             // Affichage
-            System.out.println("\n=== Itineraire vers l'encombrant situé sur l'arête (" + idA + "," + idB + ") ===");
+            System.out.println("\n=== Résultat Hypothèse 2 (Tournée) ===");
             itin.afficher();
 
         } catch (Exception e) {
-            System.err.println("Erreur lors du test : " + e.getMessage());
+            System.err.println("Erreur Hypothèse 2 : " + e.getMessage());
+        }
+    }
+
+
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("=== MENU THEME 1 ===");
+        System.out.println("1. Hypothèse 1 : aller récupérer un encombrant");
+        System.out.println("2. Hypothèse 2 : tournée d’encombrants (PPV)");
+        System.out.print("Votre choix : ");
+
+        int choix = sc.nextInt();
+
+        if (choix == 1) {
+            mainHypothese1();
+        }
+        else if (choix == 2) {
+            mainHypothese2();
+        }
+        else {
+            System.out.println("Choix invalide.");
         }
     }
 
