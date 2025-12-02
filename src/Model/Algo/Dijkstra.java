@@ -91,6 +91,48 @@ public class Dijkstra {
 
     }
 
+    public static int dijkstraDistance(Graphe graphe, Sommet depart, Sommet arrivee){
+
+        Map<Sommet, Double> dist = new HashMap<>();
+        Map<Sommet, Sommet> precedent = new HashMap<>();
+
+        for (Sommet s : graphe.getAdj().keySet()) {
+            dist.put(s, 1000000000.0);
+            precedent.put(s, null);
+        }
+        dist.put(depart, 0.0);
+
+        PriorityQueue<Sommet> listprio = new PriorityQueue<>(Comparator.comparing(dist::get));
+        listprio.add(depart);
+
+        while(!listprio.isEmpty()) {
+
+            Sommet actuel = listprio.poll();
+
+            if (actuel.equals(arrivee)) {
+                // on peut déjà renvoyer la distance
+                return dist.get(arrivee).intValue();
+            }
+
+            for (Liaison l : graphe.getAdj().get(actuel)) {
+
+                Sommet voisin = l.getSucc();
+                double nouvDistance = dist.get(actuel) + l.getPoids();
+
+                if (nouvDistance < dist.get(voisin)) {
+                    dist.put(voisin, nouvDistance);
+                    precedent.put(voisin, actuel);
+                    listprio.add(voisin);
+                }
+            }
+        }
+
+        // si jamais on sort sans avoir atteint 'arrivee'
+        return dist.get(arrivee).intValue();
+    }
+
+
+
     private static List<Sommet> refaireChemin(Graphe graphe, Sommet depart, Sommet arrivee, Map<Sommet, Sommet> precedent) {
 
         List<Sommet> chemin = new ArrayList<>();

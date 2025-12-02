@@ -3,26 +3,12 @@ package View;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Fenêtre principale de l'application.
- *
- * Onglet 1 : "Test"
- *   - Permet de tester les algos directement sur les fichiers textes
- *     (choix du fichier, choix de l'algo, sommet de départ / d'arrivée,
- *      affichage du résultat brut).
- *
- * Onglet 2 : "Appli"
- *   - Permet de se placer dans la peau d'une collectivité ou d'un particulier
- *     puis de choisir un thème et des hypothèses.
- *   - Le contrôleur se charge ensuite d'appeler les bons traitements
- *     et d'afficher les résultats.
- */
 public class GraphView extends JFrame {
 
-    // ---------- Composant racine ----------
-    private final JTabbedPane tabbedPane;
+    // Onglets
+    private JTabbedPane tabbedPane;
 
-    // ---------- Onglet TEST ----------
+    // ----- Onglet TEST -----
     public JComboBox<String> fileComboTest;
     public JComboBox<String> algoComboTest;
     public JTextField departFieldTest;
@@ -30,21 +16,34 @@ public class GraphView extends JFrame {
     public JTextArea outputAreaTest;
     public JButton runButtonTest;
 
-    // ---------- Onglet APPLI ----------
-    public JComboBox<String> roleCombo;      // Collectivité / Particulier
-    public JComboBox<String> themeCombo;     // Thème 1 / Thème 2 / Thème 3 ...
-    public JComboBox<String> hypoCombo;      // Hypothèses possibles
-    public JTextArea outputAreaAppli;
-    public JButton runButtonAppli;
+    // ----- Onglet COLLECTIVITE -----
+    public JComboBox<String> fileComboCollectivite;
+    public JComboBox<String> algoComboCollectivite;
+    public JTextField departFieldCollectivite;
+    public JTextField arriveeFieldCollectivite;
+    public JTextArea outputAreaCollectivite;
+    public JButton runButtonCollectivite;
+
+    // ----- Onglet ENTREPRISE -----
+    public JComboBox<String> fileComboEntreprise;
+    public JComboBox<String> algoComboEntreprise;
+    public JTextField departFieldEntreprise;
+    public JTextField arriveeFieldEntreprise;
+    public JTextArea outputAreaEntreprise;
+    public JButton runButtonEntreprise;
 
     public GraphView() {
-        super("Projet Théorie des Graphes - Gestion des déchets");
+        super("Projet TG - Gestion déchets");
 
         tabbedPane = new JTabbedPane();
 
-        // Construction des deux onglets
-        buildTestTab();
-        buildAppliTab();
+        JPanel testPanel = buildTestTab();
+        JPanel collectivitePanel = buildCollectiviteTab();
+        JPanel entreprisePanel = buildEntrepriseTab();
+
+        tabbedPane.addTab("Test", testPanel);
+        tabbedPane.addTab("Collectivité", collectivitePanel);
+        tabbedPane.addTab("Entreprise de collecte", entreprisePanel);
 
         setLayout(new BorderLayout());
         add(tabbedPane, BorderLayout.CENTER);
@@ -55,26 +54,32 @@ public class GraphView extends JFrame {
     }
 
     // ============================================================
-    //  Onglet TEST
+    // Onglet TEST
     // ============================================================
-    private void buildTestTab() {
-        JPanel testPanel = new JPanel(new BorderLayout(10, 10));
+    private JPanel buildTestTab() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
 
         fileComboTest = new JComboBox<>();
-        algoComboTest = new JComboBox<>(new String[]{"Dijkstra", "BFS"});
+        algoComboTest = new JComboBox<>(new String[]{
+                "Dijkstra",
+                "BFS",
+                "Thème 2 - Hypothèse 2"
+        });
         departFieldTest = new JTextField("0");
         arriveeFieldTest = new JTextField("1");
+
         outputAreaTest = new JTextArea();
         outputAreaTest.setEditable(false);
         outputAreaTest.setLineWrap(true);
         outputAreaTest.setWrapStyleWord(true);
         outputAreaTest.setFont(new Font("Monospaced", Font.PLAIN, 12));
+
         runButtonTest = new JButton("Lancer le test");
 
         JPanel top = new JPanel(new GridLayout(4, 2, 8, 8));
         top.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        top.add(new JLabel("Fichier de test :"));
+        top.add(new JLabel("Fichier de graphe :"));
         top.add(fileComboTest);
 
         top.add(new JLabel("Algorithme :"));
@@ -87,75 +92,117 @@ public class GraphView extends JFrame {
         top.add(arriveeFieldTest);
 
         JScrollPane scroll = new JScrollPane(outputAreaTest);
-        scroll.setBorder(BorderFactory.createTitledBorder("Résultat du test"));
+        scroll.setBorder(BorderFactory.createTitledBorder("Résultats du test"));
 
         JPanel bottom = new JPanel();
         bottom.add(runButtonTest);
 
-        testPanel.add(top, BorderLayout.NORTH);
-        testPanel.add(scroll, BorderLayout.CENTER);
-        testPanel.add(bottom, BorderLayout.SOUTH);
+        panel.add(top, BorderLayout.NORTH);
+        panel.add(scroll, BorderLayout.CENTER);
+        panel.add(bottom, BorderLayout.SOUTH);
 
-        tabbedPane.addTab("Test", testPanel);
+        return panel;
     }
 
     // ============================================================
-    //  Onglet APPLI
+    // Onglet COLLECTIVITE
     // ============================================================
-    private void buildAppliTab() {
-        JPanel appliPanel = new JPanel(new BorderLayout(10, 10));
+    private JPanel buildCollectiviteTab() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
 
-        // Collectivité / Particulier
-        roleCombo = new JComboBox<>(new String[]{
-                "Collectivité",
-                "Particulier"
+        fileComboCollectivite = new JComboBox<>();
+        algoComboCollectivite = new JComboBox<>(new String[]{
+                "Dijkstra",
+                "BFS",
+                "Thème 2 - Hypothèse 2"
         });
+        departFieldCollectivite = new JTextField("0");
+        arriveeFieldCollectivite = new JTextField("1");
 
-        // Thèmes du sujet
-        themeCombo = new JComboBox<>(new String[]{
-                "Thème 1 : Ramassage aux pieds des habitations",
-                "Thème 2 : Ramassage des points de collecte",
-                "Thème 3 : Planification des jours de passage"
-        });
+        outputAreaCollectivite = new JTextArea();
+        outputAreaCollectivite.setEditable(false);
+        outputAreaCollectivite.setLineWrap(true);
+        outputAreaCollectivite.setWrapStyleWord(true);
+        outputAreaCollectivite.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
-        // Les hypothèses seront ajustées dynamiquement par le contrôleur
-        hypoCombo = new JComboBox<>(new String[]{
-                "Hypothèse 1",
-                "Hypothèse 2",
-                "Hypothèse 3"
-        });
+        runButtonCollectivite = new JButton("Calculer");
 
-        outputAreaAppli = new JTextArea();
-        outputAreaAppli.setEditable(false);
-        outputAreaAppli.setLineWrap(true);
-        outputAreaAppli.setWrapStyleWord(true);
-        outputAreaAppli.setFont(new Font("Monospaced", Font.PLAIN, 12));
-
-        runButtonAppli = new JButton("Calculer / Afficher les résultats");
-
-        JPanel top = new JPanel(new GridLayout(3, 2, 8, 8));
+        JPanel top = new JPanel(new GridLayout(4, 2, 8, 8));
         top.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        top.add(new JLabel("Type d'utilisateur :"));
-        top.add(roleCombo);
+        top.add(new JLabel("Fichier de graphe :"));
+        top.add(fileComboCollectivite);
 
-        top.add(new JLabel("Thème :"));
-        top.add(themeCombo);
+        top.add(new JLabel("Algorithme :"));
+        top.add(algoComboCollectivite);
 
-        top.add(new JLabel("Hypothèses :"));
-        top.add(hypoCombo);
+        top.add(new JLabel("Sommet de départ :"));
+        top.add(departFieldCollectivite);
 
-        JScrollPane scroll = new JScrollPane(outputAreaAppli);
-        scroll.setBorder(BorderFactory.createTitledBorder("Résultats"));
+        top.add(new JLabel("Sommet d'arrivée :"));
+        top.add(arriveeFieldCollectivite);
+
+        JScrollPane scroll = new JScrollPane(outputAreaCollectivite);
+        scroll.setBorder(BorderFactory.createTitledBorder("Résultat"));
 
         JPanel bottom = new JPanel();
-        bottom.add(runButtonAppli);
+        bottom.add(runButtonCollectivite);
 
-        appliPanel.add(top, BorderLayout.NORTH);
-        appliPanel.add(scroll, BorderLayout.CENTER);
-        appliPanel.add(bottom, BorderLayout.SOUTH);
+        panel.add(top, BorderLayout.NORTH);
+        panel.add(scroll, BorderLayout.CENTER);
+        panel.add(bottom, BorderLayout.SOUTH);
 
-        tabbedPane.addTab("Appli", appliPanel);
+        return panel;
+    }
+
+    // ============================================================
+    // Onglet ENTREPRISE
+    // ============================================================
+    private JPanel buildEntrepriseTab() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+
+        fileComboEntreprise = new JComboBox<>();
+        algoComboEntreprise = new JComboBox<>(new String[]{
+                "Dijkstra",
+                "BFS",
+                "Thème 2 - Hypothèse 2"
+        });
+        departFieldEntreprise = new JTextField("0");
+        arriveeFieldEntreprise = new JTextField("1");
+
+        outputAreaEntreprise = new JTextArea();
+        outputAreaEntreprise.setEditable(false);
+        outputAreaEntreprise.setLineWrap(true);
+        outputAreaEntreprise.setWrapStyleWord(true);
+        outputAreaEntreprise.setFont(new Font("Monospaced", Font.PLAIN, 12));
+
+        runButtonEntreprise = new JButton("Calculer");
+
+        JPanel top = new JPanel(new GridLayout(4, 2, 8, 8));
+        top.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        top.add(new JLabel("Fichier de graphe :"));
+        top.add(fileComboEntreprise);
+
+        top.add(new JLabel("Algorithme :"));
+        top.add(algoComboEntreprise);
+
+        top.add(new JLabel("Sommet de départ :"));
+        top.add(departFieldEntreprise);
+
+        top.add(new JLabel("Sommet d'arrivée :"));
+        top.add(arriveeFieldEntreprise);
+
+        JScrollPane scroll = new JScrollPane(outputAreaEntreprise);
+        scroll.setBorder(BorderFactory.createTitledBorder("Résultat"));
+
+        JPanel bottom = new JPanel();
+        bottom.add(runButtonEntreprise);
+
+        panel.add(top, BorderLayout.NORTH);
+        panel.add(scroll, BorderLayout.CENTER);
+        panel.add(bottom, BorderLayout.SOUTH);
+
+        return panel;
     }
 }
-

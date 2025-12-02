@@ -10,16 +10,13 @@ import Model.Graphe.Sommet;
 import Model.Algo.Dijkstra;
 import Model.Algo.BFS;
 import Model.ResultatCommun.Itineraire;
+import Model.Theme2.AlgoTheme2Hyp2;
+import Model.Theme2.PointCollecteSpb2;
 
 import javax.swing.*;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * Contrôleur principal.
- *
- * - Onglet "Test"  : permet de lancer directement Dijkstra / BFS sur les fichiers de /data/test
- * - Onglet "Appli" : habille ces mêmes algorithmes avec la vision "Collectivité / Particulier"
- *                    et les différents thèmes / hypothèses du sujet.
- */
 public class GraphController {
 
     private final GraphView view;
@@ -27,131 +24,110 @@ public class GraphController {
     public GraphController(GraphView view) {
         this.view = view;
 
-        // ------- Alimentation de l'onglet TEST -------
+        // On charge la liste des fichiers disponibles dans data/test
         String[] files = scanTestFiles("data/test");
-        view.fileComboTest.setModel(new DefaultComboBoxModel<>(files));
 
-        // ------- Comportement de l'onglet TEST -------
-        view.runButtonTest.addActionListener(this::onRunClickedTest);
+        // Si certains combos n'existent pas encore dans ta GraphView, tu peux commenter les lignes concernées
+        if (view.fileComboTest != null) {
+            view.fileComboTest.setModel(new DefaultComboBoxModel<>(files));
+        }
+        if (view.fileComboCollectivite != null) {
+            view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(files));
+        }
+        if (view.fileComboEntreprise != null) {
+            view.fileComboEntreprise.setModel(new DefaultComboBoxModel<>(files));
+        }
 
-        // ------- Comportement de l'onglet APPLI -------
-        // On met à jour la liste des hypothèses à chaque changement de thème
-        view.themeCombo.addActionListener(e -> updateHypothesesModel());
-
-        // Bouton principal de l'onglet "Appli"
-        view.runButtonAppli.addActionListener(this::onRunClickedAppli);
-
-        // Initialisation des hypothèses au démarrage
-        updateHypothesesModel();
+        // Raccordement des boutons d'action
+        if (view.runButtonTest != null) {
+            view.runButtonTest.addActionListener(this::onRunClickedTest);
+        }
+        if (view.runButtonCollectivite != null) {
+            view.runButtonCollectivite.addActionListener(this::onRunClickedCollectivite);
+        }
+        if (view.runButtonEntreprise != null) {
+            view.runButtonEntreprise.addActionListener(this::onRunClickedEntreprise);
+        }
     }
 
-    // ============================================================
-    //  Onglet TEST
-    // ============================================================
+    // =====================================================================
+    //  ONGLET TEST
+    // =====================================================================
+
     private void onRunClickedTest(ActionEvent e) {
-        String fileName    = (String) view.fileComboTest.getSelectedItem();
-        String algoName    = (String) view.algoComboTest.getSelectedItem();
-        String departText  = view.departFieldTest.getText();
+        String fileName = (String) view.fileComboTest.getSelectedItem();
+        String algoName = (String) view.algoComboTest.getSelectedItem();
+        String departText = view.departFieldTest.getText();
         String arriveeText = view.arriveeFieldTest.getText();
 
-        runItineraire(
-                fileName,
-                algoName,
-                departText,
-                arriveeText,
-                view.outputAreaTest,
-                "Mode TEST"
-        );
-    }
-
-    // ============================================================
-    //  Onglet APPLI
-    // ============================================================
-
-    /**
-     * Met à jour dynamiquement la liste des hypothèses en fonction du thème choisi.
-     * (mappage très simple basé sur l'énoncé ; libre à vous d'affiner ensuite)
-     */
-    private void updateHypothesesModel() {
-        Object sel = view.themeCombo.getSelectedItem();
-        String theme = (sel == null) ? "" : sel.toString();
-
-        String[] hypos;
-
-        if (theme.startsWith("Thème 1")) {
-            hypos = new String[]{
-                    "Hypothèse 1 : un seul ramassage (itinéraire le plus court)",
-                    "Hypothèse 2 : tournée limitée à une dizaine de ramassages"
-            };
-        } else if (theme.startsWith("Thème 2")) {
-            hypos = new String[]{
-                    "Hypothèse 1 : approche plus proche voisin",
-                    "Hypothèse 2 : approche MST + découpage par capacité"
-            };
-        } else if (theme.startsWith("Thème 3")) {
-            hypos = new String[]{
-                    "Hypothèse 1 : 2 secteurs voisins pas le même jour",
-                    "Hypothèse 2 : + contraintes de capacité / nb de camions"
-            };
+        if ("Thème 2 - Hypothèse 2".equals(algoName)) {
+            // Cas spécial : on ignore le fichier sélectionné et on lance directement
+            // le scénario thème 2 hyp 2 sur data/test/theme2_test.txt
+            runTheme2Hyp2(view.outputAreaTest);
         } else {
-            // Cas par défaut
-            hypos = new String[]{
-                    "Hypothèse 1",
-                    "Hypothèse 2",
-                    "Hypothèse 3"
-            };
+            // Dijkstra / BFS classiques
+            runItineraire(
+                    fileName,
+                    algoName,
+                    departText,
+                    arriveeText,
+                    view.outputAreaTest,
+                    "Mode TEST"
+            );
         }
-
-        view.hypoCombo.setModel(new DefaultComboBoxModel<>(hypos));
     }
 
-    private void onRunClickedAppli(ActionEvent e) {
-        String role  = (String) view.roleCombo.getSelectedItem();   // Collectivité / Particulier
-        String theme = (String) view.themeCombo.getSelectedItem();  // Thème 1 / 2 / 3 ...
-        String hypo  = (String) view.hypoCombo.getSelectedItem();   // Hypothèse choisie
+    // =====================================================================
+    //  ONGLET COLLECTIVITE
+    // =====================================================================
 
-        // Pour l'instant, on réutilise la même mécanique que l'onglet "Test" :
-        // on demande à l'utilisateur de choisir fichier + algo dans l'onglet Test,
-        // puis on "contextualise" juste le résultat avec le rôle / thème / hypothèse.
-        //
-        // Plus tard, si tu crées des méthodes spécifiques pour chaque cas
-        // (ex : calculTournéesTheme2(), planificationTheme3(), etc.),
-        // tu pourras les appeler ici en fonction du trio (role, theme, hypo).
+    private void onRunClickedCollectivite(ActionEvent e) {
+        String fileName = (String) view.fileComboCollectivite.getSelectedItem();
+        String algoName = (String) view.algoComboCollectivite.getSelectedItem();
+        String departText = view.departFieldCollectivite.getText();
+        String arriveeText = view.arriveeFieldCollectivite.getText();
 
-        String fileName    = (String) view.fileComboTest.getSelectedItem();
-        String algoName    = (String) view.algoComboTest.getSelectedItem();
-        String departText  = view.departFieldTest.getText();
-        String arriveeText = view.arriveeFieldTest.getText();
-
-        if (fileName == null || algoName == null) {
-            showError("Veuillez d'abord choisir un fichier et un algorithme dans l'onglet Test.");
-            return;
+        if ("Thème 2 - Hypothèse 2".equals(algoName)) {
+            runTheme2Hyp2(view.outputAreaCollectivite);
+        } else {
+            runItineraire(
+                    fileName,
+                    algoName,
+                    departText,
+                    arriveeText,
+                    view.outputAreaCollectivite,
+                    "Collectivité"
+            );
         }
-
-        // On effectue le calcul comme pour le mode test, mais en changeant le header.
-        runItineraire(
-                fileName,
-                algoName,
-                departText,
-                arriveeText,
-                view.outputAreaAppli,
-                buildAppliHeader(role, theme, hypo)
-        );
     }
 
-    private String buildAppliHeader(String role, String theme, String hypo) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Mode APPLI\n");
-        sb.append("Utilisateur : ").append(role == null ? "?" : role).append("\n");
-        sb.append("Thème      : ").append(theme == null ? "?" : theme).append("\n");
-        sb.append("Hypothèses : ").append(hypo == null ? "?" : hypo).append("\n");
-        sb.append("========================================\n");
-        return sb.toString();
+    // =====================================================================
+    //  ONGLET ENTREPRISE
+    // =====================================================================
+
+    private void onRunClickedEntreprise(ActionEvent e) {
+        String fileName = (String) view.fileComboEntreprise.getSelectedItem();
+        String algoName = (String) view.algoComboEntreprise.getSelectedItem();
+        String departText = view.departFieldEntreprise.getText();
+        String arriveeText = view.arriveeFieldEntreprise.getText();
+
+        if ("Thème 2 - Hypothèse 2".equals(algoName)) {
+            runTheme2Hyp2(view.outputAreaEntreprise);
+        } else {
+            runItineraire(
+                    fileName,
+                    algoName,
+                    departText,
+                    arriveeText,
+                    view.outputAreaEntreprise,
+                    "Entreprise de collecte"
+            );
+        }
     }
 
-    // ============================================================
-    //  Partie commune : exécution des algos + gestion fichiers
-    // ============================================================
+    // =====================================================================
+    //  Partie commune : Dijkstra / BFS sur un fichier choisi
+    // =====================================================================
 
     private void runItineraire(String fileName,
                                String algoName,
@@ -199,7 +175,7 @@ public class GraphController {
                 String texte = captureAffichageItineraire(itineraire);
 
                 StringBuilder sb = new StringBuilder();
-                sb.append(headerContexte).append("\n");
+                sb.append(headerContexte).append("\n\n");
                 sb.append("Fichier : ").append(fileName).append("\n");
                 sb.append("Algorithme : ").append(algoName).append("\n");
                 sb.append("----------------------------------------\n");
@@ -213,6 +189,69 @@ public class GraphController {
             outputArea.setText("Erreur : " + ex.getMessage());
         }
     }
+
+    // =====================================================================
+    //  Thème 2 - Hypothèse 2
+    // =====================================================================
+
+    /**
+     * Lance le scénario Thème 2 - Hypothèse 2 sur le fichier fixe
+     * data/test/theme2_test.txt
+     */
+    private void runTheme2Hyp2(JTextArea outputArea) {
+
+        try {
+            String path = "data/test/theme2_test.txt";
+            Graphe g = Graphe.chargerGraphe(path);
+
+            // Dépôt : on choisit le sommet 0 (à adapter si besoin)
+            Sommet depot = g.getSommet(0);
+
+            // Définition des points de collecte + contenances
+            // Ici, on suppose que les sommets 1, 2, 3, 4 sont des points de collecte.
+            // Les contenances ci sont choisies pour illustrer la découpe par capacité.
+            List<PointCollecteSpb2> points = new ArrayList<>();
+            points.add(new PointCollecteSpb2(g.getSommet(1), 4)); // P1 : contenance 4
+            points.add(new PointCollecteSpb2(g.getSommet(2), 3)); // P2 : contenance 3
+            points.add(new PointCollecteSpb2(g.getSommet(3), 3)); // P3 : contenance 3
+            points.add(new PointCollecteSpb2(g.getSommet(4), 5)); // P4 : contenance 5
+
+            // Capacité du camion (à adapter par rapport à l'exemple du prof)
+            int capaciteCamion = 7;
+
+            List<Itineraire> tournees =
+                    AlgoTheme2Hyp2.calculerTournees(g, depot, points, capaciteCamion);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 2 - Hypothèse 2\n");
+            sb.append("Fichier : ").append("theme2_test.txt").append("\n");
+            sb.append("Capacité camion : ").append(capaciteCamion).append("\n");
+            sb.append("Nombre de points de collecte : ").append(points.size()).append("\n");
+            sb.append("====================================\n\n");
+
+            int num = 1;
+            for (Itineraire it : tournees) {
+                sb.append("Tournée ").append(num).append(" :\n");
+                sb.append("Distance totale : ").append(it.getDistanceTotal()).append("\n");
+                sb.append("Chemin (sommets) : ");
+                for (Sommet s : it.getListSommet()) {
+                    sb.append(s.getId()).append(" ");
+                }
+                sb.append("\n\n");
+                num++;
+            }
+
+            outputArea.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            outputArea.setText("Erreur Thème 2 Hyp 2 : " + ex.getMessage());
+        }
+    }
+
+    // =====================================================================
+    //  Utils
+    // =====================================================================
 
     private void showError(String message) {
         JOptionPane.showMessageDialog(
