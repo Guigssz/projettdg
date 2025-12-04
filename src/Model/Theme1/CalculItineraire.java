@@ -9,44 +9,46 @@ import java.util.*;
 public class CalculItineraire {
 
 
-
     public static Itineraire itineraireVersEncombrant(Graphe g, Sommet depot, Encombrant e) {
 
         Sommet A = e.getLiaison().getPred();
         Sommet B = e.getLiaison().getSucc();
-        double w = e.getLiaison().getPoids();
+        double poids = e.getLiaison().getPoids();
 
-        // 1️⃣ On utilise TON dijkstra pour calculer D→A et D→B
+       // dijkstra pour choisir de quel côté de l'arrête est le plus opti par lequel commencer
         Itineraire itinDA = Dijkstra.dijkstra(g, depot, A);
         Itineraire itinDB = Dijkstra.dijkstra(g, depot, B);
 
-        double cout1 = itinDA.getDistanceTotal() + w; // D -> A -> B
-        double cout2 = itinDB.getDistanceTotal() + w; // D -> B -> A
+        double option1 = itinDA.getDistanceTotal() + poids; // Depot puis A puis B
+        double option2 = itinDB.getDistanceTotal() + poids; // Depot puis B puis A
 
-        // 2️⃣ Choix du meilleur sens
-        if (cout1 <= cout2) {
-            // partir vers A puis traverser A→B
+        //on choisi le meilleur
+        if (option1 <= option2) {
+            // on commence par le sommet A de l'arete AB
+
             List<Sommet> chemin = new ArrayList<>(itinDA.getListSommet());
             chemin.add(B);
-            return new Itineraire(depot, B, chemin, cout1);
+            return new Itineraire(depot, B, chemin, option1);
 
         } else {
-            // partir vers B puis traverser B→A
+            // on commence par le sommet B de l'arete AB
+
             List<Sommet> chemin = new ArrayList<>(itinDB.getListSommet());
             chemin.add(A);
-            return new Itineraire(depot, A, chemin, cout2);
+            return new Itineraire(depot, A, chemin, option2);
         }
+
     }
 
-    public static Itineraire itineraireTSPEncombrants(Graphe g, Sommet depot, List<Encombrant> encombrants) {
+    public static Itineraire itineraireversListeEncombrants(Graphe g, Sommet depot, List<Encombrant> encombrants) {
 
         List<Sommet> cheminTotal = new ArrayList<>();
         double distanceTotal = 0.0;
 
-        // Position courante = depot
-        Sommet positionCourante = depot;
+        // Position depart = depot
+        Sommet position = depot;
 
-        // Liste mutable
+
         List<Encombrant> restants = new ArrayList<>(encombrants);
 
         cheminTotal.add(depot);
@@ -55,42 +57,40 @@ public class CalculItineraire {
 
             Encombrant meilleur = null;
             Itineraire meilleurItin = null;
-            double meilleurCout = Double.MAX_VALUE;
+            double meilleurPoids = 1000000.0;
 
-            // 1️⃣ Chercher l'encombrant le plus proche
+            // chercher l'encombrant le plus proche
             for (Encombrant e : restants) {
 
-                // Aller de la position courante vers cet encombrant
-                Itineraire itin = CalculItineraire.itineraireVersEncombrant(g, positionCourante, e);
+                // on va collecter cet encombrant avec l'autre méthode
+                Itineraire itin = CalculItineraire.itineraireVersEncombrant(g, position, e);
 
-                if (itin.getDistanceTotal() < meilleurCout) {
-                    meilleurCout = itin.getDistanceTotal();
+                if (itin.getDistanceTotal() < meilleurPoids) {
+                    meilleurPoids = itin.getDistanceTotal();
                     meilleur = e;
                     meilleurItin = itin;
                 }
             }
 
-            // 2️⃣ Ajouter le chemin trouvé au chemin total
-            // éviter de dupliquer le premier sommet
+            // Pour avoir l'itiniraire total après
             List<Sommet> ch = meilleurItin.getListSommet();
             for (int i = 1; i < ch.size(); i++) {
                 cheminTotal.add(ch.get(i));
             }
 
-            distanceTotal += meilleurCout;
+            distanceTotal += meilleurPoids;
 
-            // 3️⃣ Mise à jour de la position courante (extrémité de l'arête traversée)
-            positionCourante = meilleurItin.getArrivee();
+           // la position de vient l'extremité de l'arrete de l'encombrant collecté
+            position = meilleurItin.getArrivee();
 
-            // 4️⃣ On enlève cet encombrant de la liste
             restants.remove(meilleur);
         }
 
-        // Itinéraire global
-        return new Itineraire(depot, positionCourante, cheminTotal, distanceTotal);
+        // Itinéraire final
+        return new Itineraire(depot, position, cheminTotal, distanceTotal);
     }
 
-    public static void mainHypothese1() {
+    public static void mainH01() {
 
         //Un seul ramassage à la fois. Il faut déterminer
         //l’itinéraire le plus court permettant de se rendre chez un
@@ -107,48 +107,39 @@ public class CalculItineraire {
             g.afficherAdj();
             System.out.println();
 
-            // Choix du dépôt
-            System.out.print("Entrez l'ID du sommet de départ (dépôt) : ");
+            // choix depot
+            System.out.print("Entrez id du sommet de depart/depot : ");
             int idDepot = sc.nextInt();
             Sommet depot = g.getSommet(idDepot);
 
-            // Choix A et B
-            System.out.print("Entrez l'ID du sommet A (extrémité 1 de l'arête) : ");
-            Sommet A = g.getSommet(sc.nextInt());
+            // Choix de l'arete ou se trouve l'encombrant
 
-            System.out.print("Entrez l'ID du sommet B (extrémité 2 de l'arête) : ");
-            Sommet B = g.getSommet(sc.nextInt());
+            g.afficherLiaisons();
 
-            // Vérification existence arête
-            Liaison AB = null;
-            for (Liaison l : g.getAdj().get(A)) {
-                if (l.getSucc().equals(B)) {
-                    AB = l;
-                    break;
-                }
-            }
+            Liaison liasionchoisi = chosirLiaison(g);
 
-            if (AB == null) {
-                System.out.println("❌ Erreur : l'arête A-B n'existe pas.");
-                return;
+            if (liasionchoisi == null) {
+                System.out.println("arete pas trouvé");
             }
 
             // Encombrant
-            Encombrant e = new Encombrant(AB);
+            Encombrant e = new Encombrant(liasionchoisi);
 
-            // Calcul
+            System.out.println("Encombrant ajoutée à la liaison : " + liasionchoisi.getPred().getId() + liasionchoisi.getSucc().getId());
+
             Itineraire itin = itineraireVersEncombrant(g, depot, e);
 
-            // Affichage
-            System.out.println("\n=== Résultat Hypothèse 1 ===");
+
+            System.out.println("\n=== Résultat H01 ===");
+            System.out.println("On est allé chercher l'encombrant à l'arête : " + e.getLiaison().getPred().getId() + e.getLiaison().getSucc().getId());
             itin.afficher();
 
         } catch (Exception e) {
-            System.err.println("Erreur Hypothèse 1 : " + e.getMessage());
+            System.err.println("Erreur H01 : " + e.getMessage());
         }
     }
 
-    public static void mainHypothese2() {
+    public static void mainH02() {
 
         //La mairie regroupe les demandes et propose des
         //dates de tournées de ramassages. Une tournée est limitée à une
@@ -166,51 +157,51 @@ public class CalculItineraire {
             g.afficherAdj();
             System.out.println();
 
-            // Choix du dépôt
-            System.out.print("Entrez l'ID du sommet de départ (dépôt) : ");
+            // choix depot
+            System.out.print("Entrez id du sommet de depart/depot : ");
             Sommet depot = g.getSommet(sc.nextInt());
 
-            // Nombre d’encombrants
+            // choisir les encombrants
             System.out.print("Combien d'encombrants voulez-vous créer ? ");
             int nb = sc.nextInt();
 
             List<Encombrant> liste = new ArrayList<>();
 
+            g.afficherLiaisons();
+
+
             for (int i = 1; i <= nb; i++) {
-                System.out.println("\n--- Encombrant " + i + " ---");
+                System.out.println("\nEncombrant " + i + ": ");
 
-                System.out.print("Sommet A : ");
-                Sommet A = g.getSommet(sc.nextInt());
 
-                System.out.print("Sommet B : ");
-                Sommet B = g.getSommet(sc.nextInt());
+                Liaison liasionchoisi = chosirLiaison(g);
 
-                // Chercher l'arête
-                Liaison AB = null;
-                for (Liaison l : g.getAdj().get(A)) {
-                    if (l.getSucc().equals(B)) {
-                        AB = l;
-                        break;
-                    }
-                }
 
-                if (AB == null) {
-                    System.out.println("❌ L'arête n'existe pas, je passe.");
+                if (liasionchoisi == null) {
+                    System.out.println("arete pas trouvé");
                 } else {
-                    liste.add(new Encombrant(AB));
+                    liste.add(new Encombrant(liasionchoisi));
                 }
+
+                System.out.println("Encombrant " + i + " ajoutée à la liaison : " + liasionchoisi.getPred().getId() + liasionchoisi.getSucc().getId());
+
             }
 
             if (liste.isEmpty()) {
-                System.out.println("Aucun encombrant valide.");
+                System.out.println("liste d'e vide");
                 return;
             }
 
-            // Calcul PPV
-            Itineraire itin = itineraireTSPEncombrants(g, depot, liste);
 
-            // Affichage
-            System.out.println("\n=== Résultat Hypothèse 2 (Tournée) ===");
+            Itineraire itin = itineraireversListeEncombrants(g, depot, liste);
+
+            System.out.println("\n=== Résultat H02 ===");
+            System.out.println("On est allé chercher les encombrants au arêtes : " );
+            for (Encombrant e : liste) {
+                System.out.println(e.getLiaison().getPred().getId() + "" +  e.getLiaison().getSucc().getId());
+            }
+
+
             itin.afficher();
 
         } catch (Exception e) {
@@ -219,25 +210,41 @@ public class CalculItineraire {
     }
 
 
+    public static Liaison chosirLiaison(Graphe g){
+
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Choisissez une arête (1-" + g.getLiaison().size() + ") : ");
+        int choix = sc.nextInt();
+
+        if (choix < 1 || choix > g.getLiaison().size()) {
+            System.out.println("pas arete");
+        }
+
+        return  g.getLiaison().get(choix - 1);
+
+    }
+
+
     public static void main(String[] args) {
 
         Scanner sc = new Scanner(System.in);
 
         System.out.println("=== MENU THEME 1 ===");
-        System.out.println("1. Hypothèse 1 : aller récupérer un encombrant");
-        System.out.println("2. Hypothèse 2 : tournée d’encombrants (PPV)");
+        System.out.println("1. H01 : aller récupérer un encombrant");
+        System.out.println("2. H02 : recup plusieur encombrants");
         System.out.print("Votre choix : ");
 
         int choix = sc.nextInt();
 
         if (choix == 1) {
-            mainHypothese1();
+            mainH01();
         }
         else if (choix == 2) {
-            mainHypothese2();
+            mainH02();
         }
         else {
-            System.out.println("Choix invalide.");
+            System.out.println("nop");
         }
     }
 

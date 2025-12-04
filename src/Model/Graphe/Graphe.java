@@ -10,8 +10,6 @@ import java.util.*;
 public class Graphe {
 
     private boolean oriente = false;
-    public boolean isOriente() { return oriente; }
-
     private final int nb_sommet;
     private final List<Sommet> sommets;
     private final List<Liaison> liaisons;
@@ -70,7 +68,7 @@ public class Graphe {
                 // si tu veux garder l'info globalement :
                 graphe.oriente = true; // (champ à ajouter dans la classe)
             } else {
-                // double sens (ton comportement actuel)
+                // double sens
                 graphe.ajouterLiaison(pred, succ, poids);
             }
         }
@@ -88,6 +86,7 @@ public class Graphe {
         adjlist.get(pred).add(l1);
         adjlist.get(succ).add(l2);
     }
+
     // Pour les rues à sens unique pred -> succ
     public void ajouterLiaisonOriente(Sommet pred, Sommet succ, double poids) {
 
@@ -111,9 +110,11 @@ public class Graphe {
 
     public void afficherLiaisons() {
 
+        int index = 1;
         System.out.println("Liaisons du graphe:");
         for (Liaison l : liaisons) {
-            System.out.println(l.getPred().getId() + " -- " + l.getSucc().getId() + " Poids : " + l.getPoids());
+            System.out.println(index + ".  " + l.getPred().getId() + " -- " + l.getSucc().getId() + " Poids : " + l.getPoids());
+            index++;
         }
     }
 
@@ -140,7 +141,11 @@ public class Graphe {
             }
         }
 
-        throw new RuntimeException("Aucune arête " + a + "-" + b + " trouvée !");
+        throw new RuntimeException("erreur");
+    }
+
+    public List<Liaison> getLiaison(){
+        return liaisons;
     }
 
 
