@@ -27,19 +27,15 @@ public class GraphView extends JFrame {
     public JTextArea outputAreaCollectivite;
     public JButton runButtonCollectivite;
 
-    // labels pour pouvoir cacher/afficher l'arrivée
-    private JLabel departLabelCollectivite;
-    private JLabel arriveeLabelCollectivite;
-
-    // Zone pour configuration des secteurs (Thème 3 H1)
     public JTextArea secteursConfigAreaCollectivite;
-    private JPanel secteursConfigPanelCollectivite;
-
-    // (éventuels champs pour Thème 3 H2)
     public JTextField capaciteCamionFieldCollectivite;
     public JTextField contenancesFieldCollectivite;
+
+    private JLabel departLabelCollectivite;
+    private JLabel arriveeLabelCollectivite;
     private JLabel capaciteCamionLabelCollectivite;
     private JLabel contenancesLabelCollectivite;
+    private JPanel secteursConfigPanelCollectivite;
 
     // ----- Onglet ENTREPRISE -----
     public JComboBox<String> fileComboEntreprise;
@@ -48,10 +44,14 @@ public class GraphView extends JFrame {
     public JTextField arriveeFieldEntreprise;
     public JTextArea outputAreaEntreprise;
     public JButton runButtonEntreprise;
+
     public JTextField capaciteCamionFieldEntreprise;
     public JTextField contenancesFieldEntreprise;
     private JLabel capaciteCamionLabelEntreprise;
     private JLabel contenancesLabelEntreprise;
+
+    public JList<String> liaisonsListEntreprise;
+    public JPanel liaisonsPanelEntreprise;
 
     public GraphView() {
         super("Projet TG - Gestion déchets");
@@ -75,7 +75,7 @@ public class GraphView extends JFrame {
     }
 
     // =====================================================================
-    // Onglet TEST (inchangé globalement)
+    // Onglet TEST
     // =====================================================================
     private JPanel buildTestTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
@@ -151,7 +151,7 @@ public class GraphView extends JFrame {
     }
 
     // =====================================================================
-    // Onglet COLLECTIVITE (modifié ici)
+    // Onglet COLLECTIVITE
     // =====================================================================
     private JPanel buildCollectiviteTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
@@ -174,7 +174,6 @@ public class GraphView extends JFrame {
 
         capaciteCamionFieldCollectivite = new JTextField("10");
         contenancesFieldCollectivite = new JTextField("2,3,2,4,3,5");
-
         capaciteCamionLabelCollectivite = new JLabel("Capacité :");
         contenancesLabelCollectivite = new JLabel("Contenances :");
 
@@ -228,12 +227,12 @@ public class GraphView extends JFrame {
         center.add(scrollResult, BorderLayout.CENTER);
 
         runButtonCollectivite = new JButton("Calculer");
-
         JPanel bottom = new JPanel();
         bottom.add(runButtonCollectivite);
 
-        // Listener pour gérer l'affichage arrivée / secteurs / capacités
         algoComboCollectivite.addActionListener(e -> updateCollectiviteVisibility());
+        // appel initial pour régler la visibilité en fonction de la valeur par défaut
+        updateCollectiviteVisibility();
 
         panel.add(top, BorderLayout.NORTH);
         panel.add(center, BorderLayout.CENTER);
@@ -242,13 +241,6 @@ public class GraphView extends JFrame {
         return panel;
     }
 
-    /**
-     * Appelé quand on change le problème dans l'onglet Collectivité.
-     * Ici on gère :
-     *  - afficher/cacher le sommet d'arrivée
-     *  - afficher/cacher panneau secteurs (Thème 3 H1)
-     *  - afficher/cacher capacité/contenances pour Thème 3 H2 (si tu le veux plus tard)
-     */
     private void updateCollectiviteVisibility() {
         String sel = (String) algoComboCollectivite.getSelectedItem();
 
@@ -256,23 +248,28 @@ public class GraphView extends JFrame {
         boolean isTheme3H1 = "Thème 3 - Hypothèse 1".equals(sel);
         boolean isTheme3H2 = "Thème 3 - Hypothèse 2".equals(sel);
 
-        // Thème 1 PB2 : on NE veut que le sommet de départ (pas d'arrivée)
-        if (isPB2) {
-            arriveeLabelCollectivite.setVisible(false);
-            arriveeFieldCollectivite.setVisible(false);
-        } else {
-            arriveeLabelCollectivite.setVisible(true);
-            arriveeFieldCollectivite.setVisible(true);
-        }
-
-        if (isTheme3H1){
+        // Gestion départ / arrivée
+        if (isTheme3H1) {
+            // Thème 3 H1 : ni départ ni arrivée (juste la coloration de secteurs)
             departLabelCollectivite.setVisible(false);
             departFieldCollectivite.setVisible(false);
             arriveeLabelCollectivite.setVisible(false);
             arriveeFieldCollectivite.setVisible(false);
+        } else if (isPB2) {
+            // Thème 1 PB2 : seulement le sommet de départ
+            departLabelCollectivite.setVisible(true);
+            departFieldCollectivite.setVisible(true);
+            arriveeLabelCollectivite.setVisible(false);
+            arriveeFieldCollectivite.setVisible(false);
+        } else {
+            // Autres cas : départ + arrivée visibles
+            departLabelCollectivite.setVisible(true);
+            departFieldCollectivite.setVisible(true);
+            arriveeLabelCollectivite.setVisible(true);
+            arriveeFieldCollectivite.setVisible(true);
         }
 
-        // Panneau secteurs seulement pour Thème 3 H1
+        // Panneau secteurs pour Thème 3 H1
         secteursConfigPanelCollectivite.setVisible(isTheme3H1);
 
         // Capacités pour Thème 3 H2 (optionnel)
@@ -283,12 +280,16 @@ public class GraphView extends JFrame {
     }
 
     // =====================================================================
-    // Onglet ENTREPRISE (comme avant)
+    // Onglet ENTREPRISE
     // =====================================================================
+    // À déclarer en haut de ta classe avec les autres champs :
+    private JLabel arriveeLabelEntreprise;
+
     private JPanel buildEntrepriseTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
         fileComboEntreprise = new JComboBox<>();
+
         algoComboEntreprise = new JComboBox<>(new String[]{
                 "Thème 1 - PB1 - H1 (1 encombrant)",
                 "Thème 1 - PB1 - H2 (plusieurs encombrants)",
@@ -306,15 +307,30 @@ public class GraphView extends JFrame {
         capaciteCamionLabelEntreprise = new JLabel("Capacité camion :");
         contenancesLabelEntreprise = new JLabel("Contenances (séparées par des virgules) :");
 
+        // Zone de résultat
         outputAreaEntreprise = new JTextArea();
         outputAreaEntreprise.setEditable(false);
         outputAreaEntreprise.setLineWrap(true);
         outputAreaEntreprise.setWrapStyleWord(true);
         outputAreaEntreprise.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        JScrollPane scroll = new JScrollPane(outputAreaEntreprise);
-        scroll.setBorder(BorderFactory.createTitledBorder("Résultat"));
+        JScrollPane scrollResult = new JScrollPane(outputAreaEntreprise);
+        scrollResult.setBorder(BorderFactory.createTitledBorder("Résultat"));
 
-        runButtonEntreprise = new JButton("Calculer");
+        // Liste des arêtes pour Thème 1 PB1
+        liaisonsListEntreprise = new JList<>(new DefaultListModel<>());
+        JScrollPane scrollLiaisons = new JScrollPane(liaisonsListEntreprise);
+        scrollLiaisons.setPreferredSize(new Dimension(250, 120));
+
+        liaisonsPanelEntreprise = new JPanel(new BorderLayout(5, 5));
+        liaisonsPanelEntreprise.setBorder(
+                BorderFactory.createTitledBorder("Arêtes (choix de l'encombrant - Thème 1 PB1)")
+        );
+        liaisonsPanelEntreprise.add(
+                new JLabel("Sélectionnez une arête de la liste :"),
+                BorderLayout.NORTH
+        );
+        liaisonsPanelEntreprise.add(scrollLiaisons, BorderLayout.CENTER);
+        liaisonsPanelEntreprise.setVisible(false);
 
         JPanel top = new JPanel(new GridLayout(6, 2, 8, 8));
         top.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -325,10 +341,11 @@ public class GraphView extends JFrame {
         top.add(new JLabel("Problème / Thème :"));
         top.add(algoComboEntreprise);
 
-        top.add(new JLabel("Sommet de départ :"));
+        top.add(new JLabel("Sommet de départ (dépôt) :"));
         top.add(departFieldEntreprise);
 
-        top.add(new JLabel("Sommet d'arrivée :"));
+        arriveeLabelEntreprise = new JLabel("Sommet d'arrivée :");
+        top.add(arriveeLabelEntreprise);
         top.add(arriveeFieldEntreprise);
 
         top.add(capaciteCamionLabelEntreprise);
@@ -342,22 +359,48 @@ public class GraphView extends JFrame {
         contenancesLabelEntreprise.setVisible(false);
         contenancesFieldEntreprise.setVisible(false);
 
-        algoComboEntreprise.addActionListener(e -> {
-            boolean isTheme2Hyp2 = "Thème 2 - Hypothèse 2".equals(algoComboEntreprise.getSelectedItem());
-            capaciteCamionLabelEntreprise.setVisible(isTheme2Hyp2);
-            capaciteCamionFieldEntreprise.setVisible(isTheme2Hyp2);
-            contenancesLabelEntreprise.setVisible(isTheme2Hyp2);
-            contenancesFieldEntreprise.setVisible(isTheme2Hyp2);
-        });
+        algoComboEntreprise.addActionListener(e -> updateEntrepriseVisibility());
+        updateEntrepriseVisibility();
 
+        JPanel center = new JPanel(new BorderLayout(5, 5));
+        center.add(liaisonsPanelEntreprise, BorderLayout.NORTH);
+        center.add(scrollResult, BorderLayout.CENTER);
+
+        runButtonEntreprise = new JButton("Calculer");
         JPanel bottom = new JPanel();
         bottom.add(runButtonEntreprise);
 
         panel.add(top, BorderLayout.NORTH);
-        panel.add(scroll, BorderLayout.CENTER);
+        panel.add(center, BorderLayout.CENTER);
         panel.add(bottom, BorderLayout.SOUTH);
 
         return panel;
+    }
+
+    private void updateEntrepriseVisibility() {
+        String sel = (String) algoComboEntreprise.getSelectedItem();
+        if (sel == null) return;
+
+        boolean isTheme2Hyp2 = "Thème 2 - Hypothèse 2".equals(sel);
+        boolean isPB1 = sel.startsWith("Thème 1 - PB1");
+
+        // Capacité / contenances seulement pour Thème 2 Hyp 2
+        capaciteCamionLabelEntreprise.setVisible(isTheme2Hyp2);
+        capaciteCamionFieldEntreprise.setVisible(isTheme2Hyp2);
+        contenancesLabelEntreprise.setVisible(isTheme2Hyp2);
+        contenancesFieldEntreprise.setVisible(isTheme2Hyp2);
+
+        // Sommet d'arrivée : caché pour PB1, visible sinon
+        if (isPB1) {
+            arriveeLabelEntreprise.setVisible(false);
+            arriveeFieldEntreprise.setVisible(false);
+        } else {
+            arriveeLabelEntreprise.setVisible(true);
+            arriveeFieldEntreprise.setVisible(true);
+        }
+
+        // Panneau arêtes pour Thème 1 PB1 (H1 ou H2)
+        liaisonsPanelEntreprise.setVisible(isPB1);
     }
 }
 

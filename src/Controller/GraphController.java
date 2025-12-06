@@ -12,6 +12,7 @@ import java.util.List;
 
 import Model.Graphe.Graphe;
 import Model.Graphe.Sommet;
+import Model.Graphe.Liaison;
 import Model.Algo.Dijkstra;
 import Model.Algo.BFS;
 import Model.ResultatCommun.Itineraire;
@@ -19,6 +20,10 @@ import Model.ResultatCommun.Itineraire;
 // Thème 1 PB2
 import Model.Theme1.Pb2;
 import Model.Theme1.TourneePb2;
+
+// Thème 1 PB1
+import Model.Theme1.CalculItineraire;
+import Model.Theme1.Encombrant;
 
 // Thème 2 Hyp2
 import Model.Theme2.AlgoTheme2Hyp2;
@@ -34,10 +39,13 @@ public class GraphController {
     private final GraphView view;
     private String[] allFiles;
 
+    // cache du graphe utilisé pour la liste d'arêtes (Entreprise)
+    private Graphe lastGraphEntrepriseEdges;
+    private String lastGraphEntrepriseFile;
+
     public GraphController(GraphView view) {
         this.view = view;
 
-        // Charger tous les fichiers de data/test
         allFiles = scanTestFiles("data/test");
 
         if (view.fileComboTest != null) {
@@ -55,7 +63,7 @@ public class GraphController {
             view.runButtonTest.addActionListener(this::onRunClickedTest);
         }
 
-        // Listener onglet Collectivité
+        // Listeners onglet Collectivité
         if (view.runButtonCollectivite != null) {
             view.runButtonCollectivite.addActionListener(this::onRunClickedCollectivite);
         }
@@ -63,16 +71,26 @@ public class GraphController {
             view.algoComboCollectivite.addActionListener(e -> updateCollectiviteFiles());
         }
 
-        // Listener onglet Entreprise
+        // Listeners onglet Entreprise
         if (view.runButtonEntreprise != null) {
             view.runButtonEntreprise.addActionListener(this::onRunClickedEntreprise);
+        }
+        if (view.fileComboEntreprise != null) {
+            view.fileComboEntreprise.addActionListener(e -> updateEntrepriseEdgesList());
+        }
+        if (view.algoComboEntreprise != null) {
+            view.algoComboEntreprise.addActionListener(e -> {
+                String sel = (String) view.algoComboEntreprise.getSelectedItem();
+                if (sel != null && sel.startsWith("Thème 1 - PB1")) {
+                    updateEntrepriseEdgesList();
+                }
+            });
         }
     }
 
     // =====================================================================
     // ONGLET TEST
     // =====================================================================
-
     private void onRunClickedTest(ActionEvent e) {
         String fileName = (String) view.fileComboTest.getSelectedItem();
         String algoName = (String) view.algoComboTest.getSelectedItem();
@@ -100,9 +118,8 @@ public class GraphController {
     }
 
     // =====================================================================
-    // ONGLET COLLECTIVITÉ
+    // ONGLET COLLECTIVITE
     // =====================================================================
-
     private void onRunClickedCollectivite(ActionEvent e) {
         String fileName = (String) view.fileComboCollectivite.getSelectedItem();
         String algoName = (String) view.algoComboCollectivite.getSelectedItem();
@@ -127,7 +144,7 @@ public class GraphController {
             return;
         }
 
-        // Thème 3 - H1
+        // Thème 3 H1
         if ("Thème 3 - Hypothèse 1".equals(algoName)) {
             runTheme3H1(
                     fileName,
@@ -137,7 +154,7 @@ public class GraphController {
             return;
         }
 
-        // Thème 3 - H2 (pas encore implémenté)
+        // Thème 3 H2 : non implémenté pour l'instant
         if ("Thème 3 - Hypothèse 2".equals(algoName)) {
             view.outputAreaCollectivite.setText(
                     "Thème 3 - Hypothèse 2 : pas encore implémenté dans le contrôleur."
@@ -148,24 +165,18 @@ public class GraphController {
         view.outputAreaCollectivite.setText("Problème non reconnu.");
     }
 
-    /**
-     * Met à jour la liste des fichiers dans l'onglet Collectivité en fonction du problème PB2 choisi.
-     */
     private void updateCollectiviteFiles() {
         String sel = (String) view.algoComboCollectivite.getSelectedItem();
         if (sel == null) return;
 
         if (sel.startsWith("Thème 1 - PB2 - Cas idéal")) {
-            // Cas idéal : seulement zeroimpairs.txt
             setCollectiviteFilesFilter("zeroimpairs.txt");
         } else if (sel.startsWith("Thème 1 - PB2 - Cas 2 sommets impairs")) {
-            // Cas 2 impairs : seulement deuxsommetimpairs.txt
             setCollectiviteFilesFilter("deuxsommetimpairs.txt");
         } else if (sel.startsWith("Thème 1 - PB2 - Cas général")) {
-            // Cas général : tous les fichiers
             view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(allFiles));
         } else {
-            // Thème 3 H1 / H2 : tous les fichiers
+            // Thème 3 H1 / H2
             view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(allFiles));
         }
     }
@@ -185,7 +196,7 @@ public class GraphController {
         );
     }
 
-    // ---------- Thème 1 PB2 : cas idéal -----------
+    // ---------- Thème 1 PB2 : cas idéal ----------
     private void runPb2CasIdeal(String fileName, String depotText, JTextArea out) {
         if (fileName == null || fileName.startsWith("(fichier")) {
             out.setText("Fichier zeroimpairs.txt introuvable dans data/test.");
@@ -229,7 +240,7 @@ public class GraphController {
         }
     }
 
-    // ---------- Thème 1 PB2 : cas 2 impairs -----------
+    // ---------- Thème 1 PB2 : cas 2 impairs ----------
     private void runPb2Cas2Impairs(String fileName, String depotText, JTextArea out) {
         if (fileName == null || fileName.startsWith("(fichier")) {
             out.setText("Fichier deuxsommetimpairs.txt introuvable dans data/test.");
@@ -273,7 +284,7 @@ public class GraphController {
         }
     }
 
-    // ---------- Thème 1 PB2 : cas général -----------
+    // ---------- Thème 1 PB2 : cas général ----------
     private void runPb2CasGeneral(String fileName, String depotText, JTextArea out) {
         if (fileName == null || fileName.startsWith("(aucun")) {
             out.setText("Aucun fichier de graphe sélectionné.");
@@ -320,7 +331,6 @@ public class GraphController {
     // =====================================================================
     // ONGLET ENTREPRISE
     // =====================================================================
-
     private void onRunClickedEntreprise(ActionEvent e) {
         String fileName = (String) view.fileComboEntreprise.getSelectedItem();
         String algoName = (String) view.algoComboEntreprise.getSelectedItem();
@@ -330,7 +340,15 @@ public class GraphController {
             return;
         }
 
-        // Ici on ne branche vraiment que Thème 2 - Hypothèse 2 pour l'instant
+        // Thème 1 - PB1 - H1
+        if ("Thème 1 - PB1 - H1 (1 encombrant)".equals(algoName)) {
+            runTheme1PB1H1(fileName);
+            return;
+        }
+
+        // (plus tard : Thème 1 PB1 H2 ici)
+
+        // Thème 2 - Hypothèse 2
         if ("Thème 2 - Hypothèse 2".equals(algoName)) {
             runTheme2Hyp2(
                     fileName,
@@ -344,14 +362,127 @@ public class GraphController {
 
         view.outputAreaEntreprise.setText(
                 "Le problème sélectionné n'est pas encore implémenté dans l'onglet Entreprise.\n" +
-                        "Tu pourras le brancher plus tard (Thème 1 PB1, Thème 2 AP1/AP2, etc.)."
+                        "Tu pourras le brancher plus tard (Thème 1 PB1 H2, Thème 2 AP1/AP2, etc.)."
         );
     }
 
-    // =====================================================================
-    // COMMUN : DIJKSTRA / BFS entre 2 sommets (Test)
-    // =====================================================================
+    private void updateEntrepriseEdgesList() {
+        if (view.fileComboEntreprise == null || view.liaisonsListEntreprise == null) return;
 
+        String fileName = (String) view.fileComboEntreprise.getSelectedItem();
+        if (fileName == null || fileName.startsWith("(aucun")) {
+            DefaultListModel<String> empty = new DefaultListModel<>();
+            view.liaisonsListEntreprise.setModel(empty);
+            lastGraphEntrepriseEdges = null;
+            lastGraphEntrepriseFile = null;
+            return;
+        }
+
+        try {
+            String path = "data/test/" + fileName;
+            Graphe g = Graphe.chargerGraphe(path);
+
+            lastGraphEntrepriseEdges = g;
+            lastGraphEntrepriseFile = fileName;
+
+            DefaultListModel<String> model = new DefaultListModel<>();
+            List<Liaison> liaisons = g.getLiaison();
+
+            for (int i = 0; i < liaisons.size(); i++) {
+                Liaison l = liaisons.get(i);
+                int u = l.getPred().getId();
+                int v = l.getSucc().getId();
+                double w = l.getPoids();
+                String line = (i + 1) + " : " + u + " - " + v + " (poids = " + w + ")";
+                model.addElement(line);
+            }
+
+            view.liaisonsListEntreprise.setModel(model);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            DefaultListModel<String> empty = new DefaultListModel<>();
+            empty.addElement("Erreur de chargement du graphe.");
+            view.liaisonsListEntreprise.setModel(empty);
+            lastGraphEntrepriseEdges = null;
+            lastGraphEntrepriseFile = null;
+        }
+    }
+
+    private void runTheme1PB1H1(String fileName) {
+        JTextArea out = view.outputAreaEntreprise;
+
+        if (fileName == null || fileName.startsWith("(aucun")) {
+            out.setText("Aucun fichier de graphe sélectionné.");
+            return;
+        }
+
+        if (lastGraphEntrepriseEdges == null || !fileName.equals(lastGraphEntrepriseFile)) {
+            updateEntrepriseEdgesList();
+        }
+
+        Graphe g = lastGraphEntrepriseEdges;
+        if (g == null) {
+            out.setText("Impossible de charger le graphe pour Thème 1 PB1 H1.");
+            return;
+        }
+
+        int idDepot;
+        try {
+            idDepot = Integer.parseInt(view.departFieldEntreprise.getText().trim());
+        } catch (NumberFormatException ex) {
+            showError("L'id du dépôt doit être un entier.");
+            return;
+        }
+
+        Sommet depot = g.getSommet(idDepot);
+        if (depot == null) {
+            out.setText("Sommet de dépôt " + idDepot + " introuvable dans le graphe.");
+            return;
+        }
+
+        int index = view.liaisonsListEntreprise.getSelectedIndex();
+        if (index < 0) {
+            out.setText("Veuillez sélectionner une arête dans la liste pour placer l'encombrant.");
+            return;
+        }
+
+        List<Liaison> liaisons = g.getLiaison();
+        if (index >= liaisons.size()) {
+            out.setText("Index d'arête invalide.");
+            return;
+        }
+
+        Liaison liaisonChoisie = liaisons.get(index);
+        Encombrant encombrant = new Encombrant(liaisonChoisie);
+
+        try {
+            Itineraire itin = CalculItineraire.itineraireVersEncombrantavecretour(g, depot, encombrant);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 1 - PB1 - Hypothèse 1 (1 encombrant)\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Dépôt : sommet ").append(idDepot).append("\n");
+            sb.append("Encombrant sur arête : ")
+                    .append(liaisonChoisie.getPred().getId())
+                    .append(" - ")
+                    .append(liaisonChoisie.getSucc().getId())
+                    .append("\n");
+            sb.append("====================================\n\n");
+
+            sb.append(captureAffichageItineraire(itin));
+
+            out.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            out.setText("Erreur Thème 1 PB1 H1 : " + ex.getMessage());
+        }
+    }
+
+    // =====================================================================
+    // Commun : Dijkstra / BFS sur Test
+    // =====================================================================
     private void runItineraire(String fileName,
                                String algoName,
                                String departText,
@@ -390,8 +521,6 @@ public class GraphController {
                 itineraire = BFS.bfs(g, depart, arrivee);
             }
 
-            outputArea.setText("");
-
             if (itineraire == null) {
                 outputArea.setText("Aucun chemin trouvé.");
             } else {
@@ -414,9 +543,8 @@ public class GraphController {
     }
 
     // =====================================================================
-    // Thème 2 - Hypothèse 2 (déjà discuté)
+    // Thème 2 - Hypothèse 2
     // =====================================================================
-
     private void runTheme2Hyp2(String fileName,
                                String capaciteStr,
                                String contenancesStr,
@@ -445,10 +573,8 @@ public class GraphController {
             String path = "data/test/" + fileName;
             Graphe g = Graphe.chargerGraphe(path);
 
-            // Dépôt = sommet 0 (adapter si besoin)
             Sommet depot = g.getSommet(0);
 
-            // Parse contenances : "2,3,2,4,3,5"
             String[] tokens = contenancesStr.split(",");
             List<PointCollecteSpb2> points = new ArrayList<>();
 
@@ -456,7 +582,7 @@ public class GraphController {
                 String t = tokens[i].trim();
                 if (t.isEmpty()) continue;
                 int cont = Integer.parseInt(t);
-                Sommet s = g.getSommet(i + 1); // on suppose 0 = dépôt, 1..N = points
+                Sommet s = g.getSommet(i + 1);
                 points.add(new PointCollecteSpb2(s, cont));
             }
 
@@ -503,9 +629,8 @@ public class GraphController {
     }
 
     // =====================================================================
-    // Thème 3 - Hypothèse 1 (coloration de secteurs)
+    // Thème 3 - Hypothèse 1
     // =====================================================================
-
     private void runTheme3H1(String fileName, String secteursConfig, JTextArea outputArea) {
         if (fileName == null || fileName.startsWith("(aucun")) {
             outputArea.setText("Aucun fichier de graphe sélectionné.");
@@ -518,11 +643,6 @@ public class GraphController {
 
             GestionsSecteurs gestion = new GestionsSecteurs();
 
-            // Parsing de la config des secteurs
-            // Format :
-            // 1: 0,1,6,7
-            // 2: 2,3,4,5
-            // ...
             String[] lignes = secteursConfig.split("\\R");
 
             for (String ligne : lignes) {
@@ -554,7 +674,6 @@ public class GraphController {
                 gestion.ajouterSecteur(s);
             }
 
-            // Calcul voisinage + coloration
             gestion.calculerAdjacenceSecteurs(g);
             AlgoColoration.colorierWelshPowell(gestion);
 
@@ -601,7 +720,6 @@ public class GraphController {
     // =====================================================================
     // Utils
     // =====================================================================
-
     private void showError(String message) {
         JOptionPane.showMessageDialog(
                 null,
@@ -656,3 +774,4 @@ public class GraphController {
         return baos.toString();
     }
 }
+
