@@ -113,7 +113,8 @@ public class BFS {
 
     public static void main(String[] args) {
 
-        String fichierin = "data/test/adj1.txt";
+        String fichierin = "data/test/adj2.txt";
+        //prends le bon fichier
 
         try {
             // Charger le graphe

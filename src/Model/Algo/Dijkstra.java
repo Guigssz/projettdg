@@ -8,7 +8,9 @@ import java.util.*;
 public class Dijkstra {
 
 
-    public static Itineraire dijkstra(Graphe graphe, Sommet depart, Sommet arrivee){
+    public static Itineraire dijkstra
+            (Graphe graphe, Sommet depart, Sommet arrivee){
+
 
 
         Map<Sommet, Double> dist = new HashMap<>();
@@ -149,7 +151,7 @@ public class Dijkstra {
 
     public static void main(String[] args){
 
-        String fichierin = "data/test/adjmarc.txt";
+        String fichierin = "data/test/adj2.txt";
 
         // test de dijkstra
         try {
