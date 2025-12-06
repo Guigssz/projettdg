@@ -11,7 +11,7 @@ public class MainTheme3 {
     public static void main(String[] args) {
         try {
             // 1. Charger le graphe physique
-            String fichier = "data/test/adjmarc.txt";
+            String fichier = "data/test/marcoriente.txt";
             Graphe graphePhysique = Graphe.chargerGraphe(fichier);
 
             System.out.println("Graphe physique chargé : " + graphePhysique.getSommets().size() + " sommets.");
