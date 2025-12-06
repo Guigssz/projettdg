@@ -1,15 +1,12 @@
 package Model.Graphe;
 
-import Model.Algo.*;
-import Model.ResultatCommun.*;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
 public class Graphe {
 
-    private boolean oriente = false;
+    private boolean oriente;
     private final int nb_sommet;
     private final List<Sommet> sommets;
     private final List<Liaison> liaisons;
@@ -76,14 +73,15 @@ public class Graphe {
         return graphe;
     }
 
-    public void ajouterLiaison(Sommet a, Sommet b, double poids){
+    public void ajouterLiaison(Sommet pred, Sommet succ, double poids) {
 
-        Liaison l = new Liaison(a, b, poids, false);
+        Liaison l1 = new Liaison(pred, succ, poids, false);
+        Liaison l2 = new Liaison(succ, pred, poids, false); // pour l’autre sens
 
-        liaisons.add(l);
+        liaisons.add(l1);
 
-        adjlist.get(a).add(l);
-        adjlist.get(b).add(l);
+        adjlist.get(pred).add(l1);
+        adjlist.get(succ).add(l2);
     }
 
     // Pour les rues à sens unique pred -> succ
@@ -96,6 +94,8 @@ public class Graphe {
         // on n'ajoute que dans la liste des sorties de pred
         adjlist.get(pred).add(l1);
     }
+
+
 
     public Sommet getSommet(int id){
         return sommets.get(id);
@@ -159,17 +159,28 @@ public class Graphe {
     }
 
 
-    public Map<Sommet, List<Liaison>> adjancopy() {
+    public Map<Sommet, List<Liaison>> adjcopyeuler() {
+
+        // sans doublon !!!!
 
         Map<Sommet, List<Liaison>> copy = new HashMap<>();
 
+
         for (Sommet s : adjlist.keySet()) {
-            List<Liaison> newList = new ArrayList<>(adjlist.get(s));
-            copy.put(s, newList);
+            copy.put(s, new ArrayList<>());
+        }
+        
+        for (Liaison l : liaisons) {
+            Sommet a = l.getPred();
+            Sommet b = l.getSucc();
+
+            copy.get(a).add(l);
+            copy.get(b).add(l);
         }
 
         return copy;
     }
+
 
     public Liaison getLiaisonAB(Sommet a, Sommet b){
         for (Liaison l : adjlist.get(a)) {
@@ -187,6 +198,7 @@ public class Graphe {
     }
 
     public static void main(String[] args){
+
 
 
     }

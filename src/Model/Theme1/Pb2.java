@@ -47,7 +47,7 @@ public class Pb2 {
     private static List<Liaison> cycleEulerien(Graphe g, Sommet depot) {
 
        // copie pour par casser l'original
-        Map<Sommet, List<Liaison>> adj = g.adjancopy();
+        Map<Sommet, List<Liaison>> adj = g.adjcopyeuler();
 
         Stack<Sommet> pile = new Stack<>();
         List<Liaison> cycle = new ArrayList<>();
