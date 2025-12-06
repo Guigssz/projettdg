@@ -8,12 +8,19 @@ public class Secteur {
 
     private final int id;
     private final List<Sommet> sommetsDuSecteur;
-    private int jourCollecte; // -1 si pas encore défini (la "couleur")
+    private int jourCollecte; // La "Couleur" (0=Lundi, 1=Mardi...)
+
+    // Nouveaux champs pour Hypothèse 2
+    private Sommet depot;
+    private double quantiteTotaleDechets; // En kg
+    private int nombreToursCamion; // Combien de fois le camion doit passer
 
     public Secteur(int id) {
         this.id = id;
         this.sommetsDuSecteur = new ArrayList<>();
         this.jourCollecte = -1;
+        this.quantiteTotaleDechets = 0;
+        this.nombreToursCamion = 0;
     }
 
     public void ajouterSommet(Sommet s) {
@@ -22,24 +29,30 @@ public class Secteur {
         }
     }
 
-    public int getId() {
-        return id;
-    }
+    // --- Getters & Setters ---
 
-    public List<Sommet> getSommetsDuSecteur() {
-        return sommetsDuSecteur;
-    }
+    public int getId() { return id; }
+    public List<Sommet> getSommetsDuSecteur() { return sommetsDuSecteur; }
 
-    public int getJourCollecte() {
-        return jourCollecte;
-    }
+    public int getJourCollecte() { return jourCollecte; }
+    public void setJourCollecte(int jourCollecte) { this.jourCollecte = jourCollecte; }
 
-    public void setJourCollecte(int jourCollecte) {
-        this.jourCollecte = jourCollecte;
+    public Sommet getDepot() { return depot; }
+    public void setDepot(Sommet depot) { this.depot = depot; }
+
+    public double getQuantiteTotaleDechets() { return quantiteTotaleDechets; }
+    public void setQuantiteTotaleDechets(double q) { this.quantiteTotaleDechets = q; }
+
+    public int getNombreToursCamion() { return nombreToursCamion; }
+    public void setNombreToursCamion(int n) { this.nombreToursCamion = n; }
+
+    // Méthode utilitaire pour vérifier si un sommet est dans ce secteur
+    public boolean contientSommet(Sommet s) {
+        return sommetsDuSecteur.contains(s);
     }
 
     @Override
     public String toString() {
-        return "Secteur " + id + " (J" + jourCollecte + ")";
+        return "Secteur " + id + " [Déchets: " + quantiteTotaleDechets + "kg | Tours: " + nombreToursCamion + " | Jour: " + jourCollecte + "]";
     }
 }
