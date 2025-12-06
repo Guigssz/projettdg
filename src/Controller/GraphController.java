@@ -5,7 +5,11 @@ import View.GraphView;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.io.*;
-
+import Model.Theme3.GestionsSecteurs;
+import Model.Theme3.Secteur;
+import Model.Theme3.AlgoColoration;
+import Model.Graphe.Graphe;
+import Model.Graphe.Sommet;
 import Model.Graphe.Graphe;
 import Model.Graphe.Sommet;
 import Model.Algo.Dijkstra;
@@ -88,6 +92,13 @@ public class GraphController {
         String algoName = (String) view.algoComboCollectivite.getSelectedItem();
         String departText = view.departFieldCollectivite.getText();
         String arriveeText = view.arriveeFieldCollectivite.getText();
+
+        if ("Thème 3 - Hypothèse 1".equals(algoName)) {
+            runTheme3H1(fileName, view.secteursConfigAreaCollectivite.getText(), view.outputAreaCollectivite);
+            return;
+        }
+
+
 
         if ("Thème 2 - Hypothèse 2".equals(algoName)) {
             runTheme2Hyp2(
@@ -297,6 +308,101 @@ public class GraphController {
         } catch (Exception ex) {
             ex.printStackTrace();
             outputArea.setText("Erreur Thème 2 Hyp 2 : " + ex.getMessage());
+        }
+    }
+
+    private void runTheme3H1(String fileName, String secteursConfig, JTextArea outputArea) {
+        if (fileName == null || fileName.startsWith("(aucun")) {
+            outputArea.setText("Aucun fichier de graphe sélectionné.");
+            return;
+        }
+
+        try {
+            String path = "data/test/" + fileName;
+            Graphe g = Graphe.chargerGraphe(path);
+
+            GestionsSecteurs gestion = new GestionsSecteurs();
+
+            // --- Parsing de la config secteurs ---
+            // Format attendu :
+            // 1: 0,1,6,7
+            // 2: 2,3,4,5
+            // ...
+            String[] lignes = secteursConfig.split("\\R"); // split sur les retours à la ligne
+
+            for (String ligne : lignes) {
+                ligne = ligne.trim();
+                if (ligne.isEmpty()) continue;
+
+                String[] parts = ligne.split(":");
+                if (parts.length != 2) {
+                    System.err.println("Ligne secteur invalide : " + ligne);
+                    continue;
+                }
+
+                int idSecteur = Integer.parseInt(parts[0].trim());
+                Secteur s = new Secteur(idSecteur);
+
+                String[] sommetsStr = parts[1].split(",");
+                for (String ss : sommetsStr) {
+                    ss = ss.trim();
+                    if (ss.isEmpty()) continue;
+                    int idSommet = Integer.parseInt(ss);
+                    Sommet som = g.getSommet(idSommet);
+                    if (som != null) {
+                        s.ajouterSommet(som);
+                    } else {
+                        System.err.println("Sommet " + idSommet + " introuvable dans le graphe !");
+                    }
+                }
+
+                gestion.ajouterSecteur(s);
+            }
+
+            // Calculer le voisinage entre secteurs
+            gestion.calculerAdjacenceSecteurs(g);
+
+            // Coloration (Welsh-Powell)
+            AlgoColoration.colorierWelshPowell(gestion);
+
+            // Construire l'affichage
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 3 - Hypothèse 1 : Planification de secteurs\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Nombre de secteurs : ").append(gestion.getListeSecteurs().size()).append("\n");
+            sb.append("====================================\n\n");
+
+            String[] joursSemaine = {"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"};
+
+            for (Secteur s : gestion.getListeSecteurs()) {
+                int c = s.getJourCollecte();
+                String jour = (c >= 0 && c < joursSemaine.length) ? joursSemaine[c] : ("Jour " + c);
+
+                sb.append("Secteur ").append(s.getId())
+                        .append(" -> ").append(jour)
+                        .append(" (couleur ").append(c).append(")\n");
+
+                sb.append("   Sommets du secteur : ");
+                for (Sommet som : s.getSommetsDuSecteur()) {
+                    sb.append(som.getId()).append(" ");
+                }
+                sb.append("\n\n");
+            }
+
+            sb.append("--- Voisinage des secteurs ---\n");
+            for (Secteur s : gestion.getListeSecteurs()) {
+                sb.append("Secteur ").append(s.getId()).append(" est voisin de : ");
+                for (Secteur v : gestion.getVoisins(s)) {
+                    sb.append(v.getId()).append(" ");
+                }
+                sb.append("\n");
+            }
+
+            outputArea.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            outputArea.setText("Erreur Thème 3 H1 : " + ex.getMessage());
         }
     }
 
