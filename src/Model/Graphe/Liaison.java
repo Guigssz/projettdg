@@ -26,6 +26,12 @@ public class Liaison {
         return succ;
     }
 
+    public Sommet getlautre(Sommet s){
+        if (s.equals(succ)) return pred;
+        if (s.equals(pred)) return succ;
+        return null;
+    }
+
     public double getPoids() {
         return poids;
     }

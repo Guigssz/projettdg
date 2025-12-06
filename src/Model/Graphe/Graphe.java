@@ -76,15 +76,14 @@ public class Graphe {
         return graphe;
     }
 
-    public void ajouterLiaison(Sommet pred, Sommet succ, double poids) {
+    public void ajouterLiaison(Sommet a, Sommet b, double poids){
 
-        Liaison l1 = new Liaison(pred, succ, poids, false);
-        Liaison l2 = new Liaison(succ, pred, poids, false); // pour l’autre sens
+        Liaison l = new Liaison(a, b, poids, false);
 
-        liaisons.add(l1);
+        liaisons.add(l);
 
-        adjlist.get(pred).add(l1);
-        adjlist.get(succ).add(l2);
+        adjlist.get(a).add(l);
+        adjlist.get(b).add(l);
     }
 
     // Pour les rues à sens unique pred -> succ
@@ -97,8 +96,6 @@ public class Graphe {
         // on n'ajoute que dans la liste des sorties de pred
         adjlist.get(pred).add(l1);
     }
-
-
 
     public Sommet getSommet(int id){
         return sommets.get(id);
@@ -144,17 +141,52 @@ public class Graphe {
         throw new RuntimeException("erreur");
     }
 
+    public static boolean sommetouspairs(Graphe g) {
+        for (Sommet s : g.getSommets()) {
+            if (g.getVoisins(s).size() % 2 != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public List<Sommet> getVoisins(Sommet s){
+        List<Sommet> voisins = new ArrayList<>();
+        for (Liaison l : adjlist.get(s)) {
+            voisins.add(l.getlautre(s));
+        }
+        return voisins;
+    }
+
+
+    public Map<Sommet, List<Liaison>> adjancopy() {
+
+        Map<Sommet, List<Liaison>> copy = new HashMap<>();
+
+        for (Sommet s : adjlist.keySet()) {
+            List<Liaison> newList = new ArrayList<>(adjlist.get(s));
+            copy.put(s, newList);
+        }
+
+        return copy;
+    }
+
+    public Liaison getLiaisonAB(Sommet a, Sommet b){
+        for (Liaison l : adjlist.get(a)) {
+            if (l.getlautre(a).equals(b)) return l;
+        }
+        return null;
+    }
+
     public List<Liaison> getLiaison(){
         return liaisons;
     }
-
 
     public List<Sommet> getSommets() {
         return sommets;
     }
 
     public static void main(String[] args){
-
 
 
     }

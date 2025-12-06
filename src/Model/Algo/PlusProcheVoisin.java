@@ -2,9 +2,12 @@ package Model.Algo;
 
 
 import Model.Graphe.*;
+import Model.Theme1.Encombrant;
 import Model.Theme2.*;
 
 import java.util.*;
+
+import static Model.Theme1.CalculItineraire.chosirLiaison;
 
 public class PlusProcheVoisin {
 
@@ -17,7 +20,7 @@ public class PlusProcheVoisin {
         List<Integer> ordrePoints = new ArrayList<>();
         double total = 0;
 
-        PointCollecte actuel = null; // null = au dépôt
+        PointCollecte actuel = null; // null = on part du dépôt
 
         while (!restants.isEmpty()) {
 
@@ -42,9 +45,6 @@ public class PlusProcheVoisin {
             restants.remove(best);
             actuel = best;
         }
-
-        // Retour au dépôt
-        total += PointCollecte.distSommetToPC(matDist, depot, actuel);
 
         return new Tournee(depot, ordrePoints, total);
     }
@@ -74,27 +74,22 @@ public class PlusProcheVoisin {
 
             List<PointCollecte> points = new ArrayList<>();
 
+            graphe.afficherLiaisons();
+
             for (int i = 0; i < nb; i++) {
 
                 System.out.println("\nPoint de collecte " + (i + 1));
 
-                System.out.print("  Sommet U de l'arête : ");
-                int a = sc.nextInt();
+                Liaison liasionchoisi = chosirLiaison(graphe);
 
-                System.out.print("  Sommet V de l'arête : ");
-                int b = sc.nextInt();
+                if (liasionchoisi == null) {
+                    System.out.println("arete pas trouvé");
+                } else {
+                    points.add(new PointCollecte(liasionchoisi));
+                }
 
-                // on récupère l’arête
-                Liaison arete = graphe.getArrete(a, b);
+                System.out.println("Point de Collecte " + i + " ajoutée à la liaison : " + liasionchoisi.getPred().getId() + liasionchoisi.getSucc().getId());
 
-                System.out.println("  Longueur de l'arête " + a + "-" + b + " : " + arete.getPoids());
-
-                System.out.print("  Distance depuis U (" + a + ") : ");
-                double pos = sc.nextDouble();
-
-                // création du point
-                points.add(new PointCollecte(arete, pos));
-                System.out.println("  -> PC ajouté sur " + a + "-" + b + " à position " + pos);
             }
 
 

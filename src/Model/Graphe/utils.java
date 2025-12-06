@@ -19,7 +19,7 @@ public class utils {
         // /!\ Marche seulement pour du non orianté
 
         //Faut changer à chaque fois les chemins ici
-        String fichierin = "data/test/adjmarc.txt";
+        String fichierin = "data/test/zeroimpairs.txt";
 
         List<String> lines = Files.readAllLines(Paths.get(fichierin));
 
@@ -46,6 +46,7 @@ public class utils {
         }
 
         pw.close();
+        System.out.println("Conversion ok");
 
     }
 
@@ -57,7 +58,7 @@ public class utils {
 
 
         //Faut changer à chaque fois les chemins ici
-        String fichierin = "data/test/adjmarc.txt";
+        String fichierin = "data/test/zeroimpairs.txt";
 
         List<List<Integer>> matrice = new ArrayList<>();
 
@@ -110,8 +111,26 @@ public class utils {
     public static void main(String[] args){
 
         try {
-            adjmat_to_goodformat();
-            System.out.println("Conversion ok");
+
+            Scanner sc = new Scanner(System.in);
+
+            int choix = 0;
+
+            System.out.println("Menu :");
+            System.out.println("1. mat adj to list liaison :");
+            System.out.println("2. mat adj graph online to matliaison :");
+
+            choix = sc.nextInt();
+
+            switch(choix){
+                case 1:
+                    adjmat_to_goodformat();
+                    break;
+                case 2:
+                    convertadjmat();
+                    break;
+            }
+
         } catch (Exception e) {
             System.err.println("Oupsidoupsi : " + e.getMessage());
         }

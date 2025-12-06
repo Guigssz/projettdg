@@ -183,7 +183,7 @@ public class CalculItineraire {
                     liste.add(new Encombrant(liasionchoisi));
                 }
 
-                System.out.println("Encombrant " + i + " ajoutée à la liaison : " + liasionchoisi.getPred().getId() + liasionchoisi.getSucc().getId());
+                System.out.println("Encombrant " + i + " ajoutee à la liaison : " + liasionchoisi.getPred().getId() + liasionchoisi.getSucc().getId());
 
             }
 
@@ -196,7 +196,7 @@ public class CalculItineraire {
             Itineraire itin = itineraireversListeEncombrants(g, depot, liste);
 
             System.out.println("\n=== Résultat H02 ===");
-            System.out.println("On est allé chercher les encombrants au arêtes : " );
+            System.out.println("On est alle chercher les encombrants au aretes : " );
             for (Encombrant e : liste) {
                 System.out.println(e.getLiaison().getPred().getId() + "" +  e.getLiaison().getSucc().getId());
             }
