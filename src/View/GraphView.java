@@ -46,12 +46,16 @@ public class GraphView extends JFrame {
     // ==========================
     // Onglet ENTREPRISE
     // ==========================
+    // ----- Onglet ENTREPRISE -----
     public JComboBox<String> fileComboEntreprise;
     public JComboBox<String> algoComboEntreprise;
     public JTextField departFieldEntreprise;
     public JTextField arriveeFieldEntreprise;
+    public JLabel departLabelEntreprise;
+    public JLabel arriveeLabelEntreprise;
     public JTextArea outputAreaEntreprise;
     public JButton runButtonEntreprise;
+
 
     public JTextField capaciteCamionFieldEntreprise;
     public JTextField contenancesFieldEntreprise;
@@ -252,7 +256,7 @@ public class GraphView extends JFrame {
     private void updateCollectiviteVisibility() {
         String sel = (String) algoComboCollectivite.getSelectedItem();
 
-        boolean isPB2      = sel != null && sel.startsWith("Thème 1 - PB2");
+        boolean isPB2 = sel != null && sel.startsWith("Thème 1 - PB2");
         boolean isTheme3H1 = "Thème 3 - Hypothèse 1".equals(sel);
         boolean isTheme3H2 = "Thème 3 - Hypothèse 2".equals(sel);
 
@@ -302,6 +306,9 @@ public class GraphView extends JFrame {
         departFieldEntreprise = new JTextField("0");
         arriveeFieldEntreprise = new JTextField("1");
 
+        departLabelEntreprise = new JLabel("Sommet de départ (dépôt) :");
+        arriveeLabelEntreprise = new JLabel("Sommet d'arrivée :");
+
         capaciteCamionFieldEntreprise = new JTextField("10");
         contenancesFieldEntreprise = new JTextField("2,3,2,4,3,5");
 
@@ -326,7 +333,10 @@ public class GraphView extends JFrame {
         liaisonsPanelEntreprise.setBorder(
                 BorderFactory.createTitledBorder("Arêtes (PB1 & Thème 2 AP1)")
         );
-        liaisonsPanelEntreprise.add(new JLabel("Sélectionnez une ou plusieurs arêtes :"), BorderLayout.NORTH);
+        liaisonsPanelEntreprise.add(
+                new JLabel("Sélectionnez une ou plusieurs arêtes :"),
+                BorderLayout.NORTH
+        );
         liaisonsPanelEntreprise.add(scrollLiaisons, BorderLayout.CENTER);
         liaisonsPanelEntreprise.setVisible(false);
 
@@ -344,10 +354,10 @@ public class GraphView extends JFrame {
         top.add(new JLabel("Problème / Thème :"));
         top.add(algoComboEntreprise);
 
-        top.add(new JLabel("Sommet de départ (dépôt) :"));
+        top.add(departLabelEntreprise);
         top.add(departFieldEntreprise);
 
-        top.add(new JLabel("Sommet d'arrivée :"));
+        top.add(arriveeLabelEntreprise);
         top.add(arriveeFieldEntreprise);
 
         top.add(capaciteCamionLabelEntreprise);
@@ -373,6 +383,7 @@ public class GraphView extends JFrame {
         return panel;
     }
 
+
     private void updateEntrepriseVisibility() {
         String sel = (String) algoComboEntreprise.getSelectedItem();
         if (sel == null) return;
@@ -390,5 +401,10 @@ public class GraphView extends JFrame {
         capaciteCamionFieldEntreprise.setVisible(isMST);
         contenancesLabelEntreprise.setVisible(isMST);
         contenancesFieldEntreprise.setVisible(isMST);
+
+        // Sommet d'arrivée : on le cache pour PB1 H1, PB1 H2, PPV, MST (il ne sert jamais)
+        boolean hideArrival = isPB1 || isPPV || isMST;
+        arriveeLabelEntreprise.setVisible(!hideArrival);
+        arriveeFieldEntreprise.setVisible(!hideArrival);
     }
 }
