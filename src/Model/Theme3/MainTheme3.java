@@ -1,99 +1,119 @@
 package Model.Theme3;
 
 import Model.Graphe.Graphe;
+import Model.Graphe.Liaison;
 import Model.Graphe.Sommet;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+
+import java.util.*;
 
 public class MainTheme3 {
 
     public static void main(String[] args) {
         try {
-            // ==========================================
-            // ETAPE 1 : Initialisation
-            // ==========================================
+            // Chargement basique
+            // Graphe graphePhysique = Graphe.chargerGraphe("data/test/adjmarc.txt");
+            // ATTENTION : Remets ton fichier ici
             String fichier = "data/test/adjmarc.txt";
             Graphe graphePhysique = Graphe.chargerGraphe(fichier);
+
+            System.out.println("Graphe charge. " + graphePhysique.getSommets().size() + " sommets.");
+
             GestionsSecteurs gestion = new GestionsSecteurs();
 
-            System.out.println("--- 1. Création des Secteurs ---");
-
-            // Création de tes 4 secteurs (comme demandé)
+            // Creation des secteurs a la main
             creerSecteur(gestion, graphePhysique, 1, Arrays.asList(0, 1, 6, 7));
             creerSecteur(gestion, graphePhysique, 2, Arrays.asList(2, 3, 4, 5));
             creerSecteur(gestion, graphePhysique, 3, Arrays.asList(8, 9, 10, 11));
             creerSecteur(gestion, graphePhysique, 4, Arrays.asList(12, 13, 14));
 
-            // Définition manuelle des dépôts (Hypothèse : on choisit le premier point du secteur comme dépôt)
-            // Tu pourras le faire via l'IHM plus tard
+            // Depots (arbitraire)
             gestion.getSecteurById(1).setDepot(graphePhysique.getSommet(0));
             gestion.getSecteurById(2).setDepot(graphePhysique.getSommet(2));
             gestion.getSecteurById(3).setDepot(graphePhysique.getSommet(8));
             gestion.getSecteurById(4).setDepot(graphePhysique.getSommet(12));
 
-            // Calcul des voisins (Qui touche qui ?)
+            // Calcul voisins
             gestion.calculerAdjacenceSecteurs(graphePhysique);
 
-
-            // ==========================================
-            // ETAPE 2 : Configuration Camions (Console)
-            // ==========================================
+            // Inputs console (mode simple)
             Scanner sc = new Scanner(System.in);
-            System.out.println("\n--- Configuration Logistique ---");
-            System.out.print("Capacité du camion (en kg) : ");
-            double capacite = sc.nextDouble(); // ex: 100
+            System.out.print("Capacite camion : ");
+            double capacite = sc.nextDouble();
 
-            System.out.print("Densité déchets (kg par unité de distance) : ");
-            double densite = sc.nextDouble(); // ex: 10 (Si la route fait 5km, ça fait 50kg de déchets)
+            System.out.print("Quantité dechets (x distance) : ");
+            double densite = sc.nextDouble();
 
+            // On fait le calcul des totaux (pour avoir les infos globales)
+            GestionDechetSecteur.calculerMetriquesSecteurs(gestion.getListeSecteurs(), graphePhysique, capacite, densite);
 
-            // ==========================================
-            // ETAPE 3 : Calcul des Déchets et Rotations
-            // ==========================================
-            System.out.println("\n--- 2. Calcul des charges par Secteur ---");
-
-            GestionDechetSecteur.calculerMetriquesSecteurs(
-                    gestion.getListeSecteurs(),
-                    graphePhysique,
-                    capacite,
-                    densite
-            );
-
-            // Affichage des besoins AVANT planification
-            for (Secteur s : gestion.getListeSecteurs()) {
-                System.out.println("Secteur " + s.getId() + " :");
-                System.out.println("   - Déchets estimés : " + s.getQuantiteTotaleDechets() + " kg");
-                System.out.println("   - Dépôt assigné : Sommet " + s.getDepot().getId());
-                System.out.println("   - Besoin : " + s.getNombreToursCamion() + " rotation(s) de camion");
-            }
-
-
-            // ==========================================
-            // ETAPE 4 : Planification (Coloration)
-            // ==========================================
-            System.out.println("\n--- 3. Planification des Jours (Coloration) ---");
-
-            // On applique Welsh-Powell pour éviter que deux voisins soient collectés le même jour
+            // Coloration
             AlgoColoration.colorierWelshPowell(gestion);
+
+            // AFFICHAGE RESULTATS ET SIMULATION
+            System.out.println("\n planning :");
 
             String[] jours = {"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"};
 
             for (Secteur s : gestion.getListeSecteurs()) {
-                String jourNom = (s.getJourCollecte() >= 0 && s.getJourCollecte() < jours.length)
-                        ? jours[s.getJourCollecte()]
-                        : "Jour inconnu (" + s.getJourCollecte() + ")";
 
-                System.out.println(">> Secteur " + s.getId() + " sera collecté le : " + jourNom);
-                System.out.println("   (Voisins à éviter : " + formatVoisins(gestion, s) + ")");
+                String jour = (s.getJourCollecte() >= 0 && s.getJourCollecte() < jours.length) ? jours[s.getJourCollecte()] : "J" + s.getJourCollecte();
+
+                System.out.println("\n---");
+                System.out.println("SECTEUR " + s.getId() + " - " + jour);
+                System.out.println("Depot : Sommet " + s.getDepot().getId());
+                System.out.println("Total a ramasser : " + s.getQuantiteTotaleDechets() + " kg");
+                System.out.println("---");
+
+
+                // On refait le tri ici pour pouvoir les lister une par une dans la simulation
+                List<Liaison> ruesDuSecteur = new ArrayList<>();
+                for (Liaison l : graphePhysique.getLiaison()) {
+                    boolean uDansSecteur = s.contientSommet(l.getPred());
+                    boolean vDansSecteur = s.contientSommet(l.getSucc());
+
+                    // Si la rue est interne OU frontiere partant du secteur
+                    // (Meme logique que GestionDechetsSecteur)
+                    if (uDansSecteur && vDansSecteur) {
+                        ruesDuSecteur.add(l);
+                    } else if (uDansSecteur && !vDansSecteur) {
+                        // Frontiere, on la prend
+                        ruesDuSecteur.add(l);
+                    }
+                    // Note : on simplifie, on ne prend pas ceux qui "arrivent" d'un autre secteur
+                    // pour eviter les doublons si on a pas de regle stricte, mais ca suffit pour la demo
+                }
+
+                // --- SIMULATION PARCOURS ---
+                double chargeActuelle = 0;
+                int numTour = 1;
+                System.out.println("Tournee " + numTour + " (Depart " + s.getDepot().getId() + ")");
+
+                for (Liaison rue : ruesDuSecteur) {
+                    double dechetsRue = rue.getPoids() * densite;
+
+                    // Si ca deborde, on rentre vider
+                    if (chargeActuelle + dechetsRue > capacite) {
+                        System.out.println("   >>> Camion plein (" + String.format("%.1f", chargeActuelle) + "kg) ! Retour au depot " + s.getDepot().getId());
+
+                        numTour++;
+                        chargeActuelle = 0;
+                        System.out.println("Tournee " + numTour + " (Depart " + s.getDepot().getId() + ")");
+                    }
+
+                    // On ramasse
+                    chargeActuelle += dechetsRue;
+                    System.out.println("   - Passage rue " + rue.getPred().getId() + "->" + rue.getSucc().getId() + " : ramasse " + String.format("%.1f", dechetsRue) + "kg");
+                }
+
+                // Fin du secteur
+                System.out.println("   >>> Retour final depot " + s.getDepot().getId());
+                System.out.println("Fin secteur " + s.getId() + " (" + numTour + " tournees).");
             }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
-    // --- Utilitaires ---
 
     private static void creerSecteur(GestionsSecteurs gs, Graphe g, int idSecteur, List<Integer> idsSommets) {
         Secteur s = new Secteur(idSecteur);
@@ -102,13 +122,5 @@ public class MainTheme3 {
             if (som != null) s.ajouterSommet(som);
         }
         gs.ajouterSecteur(s);
-    }
-
-    private static String formatVoisins(GestionsSecteurs gs, Secteur s) {
-        StringBuilder sb = new StringBuilder();
-        for (Secteur v : gs.getVoisins(s)) {
-            sb.append(v.getId()).append(" ");
-        }
-        return sb.toString();
     }
 }
