@@ -19,9 +19,59 @@ import java.util.*;
 public class AlgoTheme2Hyp2 {
 
     // --------------------------------------------------------------------
-    // PROGRAMME PRINCIPAL
+    // Type de résultat détaillé : tournée = liste de points + itinéraire
     // --------------------------------------------------------------------
+    public static class TourneeTheme2 {
+        private final List<PointCollecteSpb2> points;
+        private final Itineraire itineraire;
+
+        public TourneeTheme2(List<PointCollecteSpb2> points, Itineraire itineraire) {
+            this.points = points;
+            this.itineraire = itineraire;
+        }
+
+        public List<PointCollecteSpb2> getPoints() {
+            return points;
+        }
+
+        public Itineraire getItineraire() {
+            return itineraire;
+        }
+
+        public int getChargeTotale() {
+            int sum = 0;
+            for (PointCollecteSpb2 pc : points) {
+                sum += pc.getContenance();
+            }
+            return sum;
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // PROGRAMMES PRINCIPAUX
+    // --------------------------------------------------------------------
+
+    /**
+     * Version simple : ne renvoie que les itinéraires.
+     */
     public static List<Itineraire> calculerTournees(
+            Graphe g,
+            Sommet depot,
+            List<PointCollecteSpb2> points,
+            int capaciteCamion) {
+
+        List<TourneeTheme2> detail = calculerTourneesDetail(g, depot, points, capaciteCamion);
+        List<Itineraire> res = new ArrayList<>();
+        for (TourneeTheme2 t : detail) {
+            res.add(t.getItineraire());
+        }
+        return res;
+    }
+
+    /**
+     * Version détaillée : tournée = (liste de points, itinéraire complet).
+     */
+    public static List<TourneeTheme2> calculerTourneesDetail(
             Graphe g,
             Sommet depot,
             List<PointCollecteSpb2> points,
@@ -41,7 +91,15 @@ public class AlgoTheme2Hyp2 {
                 decouper(ordre, capaciteCamion);
 
         // 5. Reconstruction réelle
-        return reconstruireItineraires(g, depot, tourneesDecoupees);
+        List<Itineraire> itineraires = reconstruireItineraires(g, depot, tourneesDecoupees);
+
+        // 6. Zip points + itinéraires
+        List<TourneeTheme2> resultat = new ArrayList<>();
+        for (int i = 0; i < tourneesDecoupees.size(); i++) {
+            resultat.add(new TourneeTheme2(tourneesDecoupees.get(i), itineraires.get(i)));
+        }
+
+        return resultat;
     }
 
     // --------------------------------------------------------------------
@@ -197,7 +255,7 @@ public class AlgoTheme2Hyp2 {
     }
 
     // --------------------------------------------------------------------
-    // 5. Reconstruction réelle des itinéraires (SANS concatener)
+    // 5. Reconstruction réelle des itinéraires
     // --------------------------------------------------------------------
     private static List<Itineraire> reconstruireItineraires(
             Graphe g,
@@ -225,7 +283,7 @@ public class AlgoTheme2Hyp2 {
                     cheminGlobal.addAll(cheminStep);
                     premierSegment = false;
                 } else {
-                    // on évite de répéter le sommet de départ (déjà dernier du cheminGlobal)
+                    // on évite de répéter le sommet de départ
                     cheminGlobal.addAll(cheminStep.subList(1, cheminStep.size()));
                 }
 
@@ -247,7 +305,6 @@ public class AlgoTheme2Hyp2 {
 
             distanceTotale += retour.getDistanceTotal();
 
-            // Itinéraire complet de D à D via tous les points de la tournée
             Itineraire itin = new Itineraire(depot, depot, cheminGlobal, distanceTotale);
             res.add(itin);
         }
@@ -278,37 +335,4 @@ public class AlgoTheme2Hyp2 {
             return a.hashCode() * 31 + b.hashCode();
         }
     }
-
-    // --------------------------------------------------------------------
-    // Petit main de test console (optionnel)
-    // --------------------------------------------------------------------
-    public static void main(String[] args) {
-        try {
-            Graphe g = Graphe.chargerGraphe("data/test/theme2_test.txt");
-            Sommet depot = g.getSommet(0);
-
-            List<PointCollecteSpb2> points = new ArrayList<>();
-            points.add(new PointCollecteSpb2(g.getSommet(1), 4));
-            points.add(new PointCollecteSpb2(g.getSommet(2), 3));
-            points.add(new PointCollecteSpb2(g.getSommet(3), 3));
-            points.add(new PointCollecteSpb2(g.getSommet(4), 5));
-
-            int C = 7;
-
-            List<Itineraire> tours = calculerTournees(g, depot, points, C);
-
-            int i = 1;
-            for (Itineraire it : tours) {
-                System.out.println("=== Tournee " + i + " ===");
-                it.afficher();
-                System.out.println();
-                i++;
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }
-
-

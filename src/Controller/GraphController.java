@@ -2,6 +2,7 @@ package Controller;
 
 import View.GraphView;
 
+import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.io.*;
 
@@ -13,7 +14,6 @@ import Model.ResultatCommun.Itineraire;
 import Model.Theme2.AlgoTheme2Hyp2;
 import Model.Theme2.PointCollecteSpb2;
 
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +27,6 @@ public class GraphController {
         // On charge la liste des fichiers disponibles dans data/test
         String[] files = scanTestFiles("data/test");
 
-        // Si certains combos n'existent pas encore dans ta GraphView, tu peux commenter les lignes concernées
         if (view.fileComboTest != null) {
             view.fileComboTest.setModel(new DefaultComboBoxModel<>(files));
         }
@@ -61,11 +60,14 @@ public class GraphController {
         String arriveeText = view.arriveeFieldTest.getText();
 
         if ("Thème 2 - Hypothèse 2".equals(algoName)) {
-            // Cas spécial : on ignore le fichier sélectionné et on lance directement
-            // le scénario thème 2 hyp 2 sur data/test/theme2_test.txt
-            runTheme2Hyp2(view.outputAreaTest);
+            runTheme2Hyp2(
+                    fileName,
+                    view.capaciteCamionFieldTest.getText(),
+                    view.contenancesFieldTest.getText(),
+                    view.outputAreaTest,
+                    "Mode TEST"
+            );
         } else {
-            // Dijkstra / BFS classiques
             runItineraire(
                     fileName,
                     algoName,
@@ -88,7 +90,13 @@ public class GraphController {
         String arriveeText = view.arriveeFieldCollectivite.getText();
 
         if ("Thème 2 - Hypothèse 2".equals(algoName)) {
-            runTheme2Hyp2(view.outputAreaCollectivite);
+            runTheme2Hyp2(
+                    fileName,
+                    view.capaciteCamionFieldCollectivite.getText(),
+                    view.contenancesFieldCollectivite.getText(),
+                    view.outputAreaCollectivite,
+                    "Collectivité"
+            );
         } else {
             runItineraire(
                     fileName,
@@ -112,7 +120,13 @@ public class GraphController {
         String arriveeText = view.arriveeFieldEntreprise.getText();
 
         if ("Thème 2 - Hypothèse 2".equals(algoName)) {
-            runTheme2Hyp2(view.outputAreaEntreprise);
+            runTheme2Hyp2(
+                    fileName,
+                    view.capaciteCamionFieldEntreprise.getText(),
+                    view.contenancesFieldEntreprise.getText(),
+                    view.outputAreaEntreprise,
+                    "Entreprise de collecte"
+            );
         } else {
             runItineraire(
                     fileName,
@@ -195,45 +209,80 @@ public class GraphController {
     // =====================================================================
 
     /**
-     * Lance le scénario Thème 2 - Hypothèse 2 sur le fichier fixe
-     * data/test/theme2_test.txt
+     * Lance Thème 2 - Hypothèse 2 sur le fichier choisi.
+     * - Dépôt = sommet 0 (en supposant 0 = centre de traitement dans ton graphe)
+     * - Points de collecte = sommets 1,2,3,... pour lesquels tu donnes une contenance
+     *   dans le champ texte (ex: "2,3,2,4,3,5").
      */
-    private void runTheme2Hyp2(JTextArea outputArea) {
+    private void runTheme2Hyp2(String fileName,
+                               String capaciteStr,
+                               String contenancesStr,
+                               JTextArea outputArea,
+                               String contexte) {
+
+        if (fileName == null || fileName.startsWith("(aucun")) {
+            showError("Aucun fichier de graphe trouvé dans data/test.");
+            return;
+        }
+
+        int capaciteCamion;
+        try {
+            capaciteCamion = Integer.parseInt(capaciteStr.trim());
+        } catch (NumberFormatException ex) {
+            showError("La capacité du camion doit être un entier.");
+            return;
+        }
+
+        if (contenancesStr == null || contenancesStr.trim().isEmpty()) {
+            showError("Veuillez saisir les contenances des points de collecte (ex : 2,3,2,4...).");
+            return;
+        }
 
         try {
-            String path = "data/test/theme2_test.txt";
+            String path = "data/test/" + fileName;
             Graphe g = Graphe.chargerGraphe(path);
 
-            // Dépôt : on choisit le sommet 0 (à adapter si besoin)
+            // Dépôt : sommet 0 (adapter si besoin)
             Sommet depot = g.getSommet(0);
 
-            // Définition des points de collecte + contenances
-            // Ici, on suppose que les sommets 1, 2, 3, 4 sont des points de collecte.
-            // Les contenances ci sont choisies pour illustrer la découpe par capacité.
+            // Parse des contenances : "2,3,2,4,3,5"
+            String[] tokens = contenancesStr.split(",");
             List<PointCollecteSpb2> points = new ArrayList<>();
-            points.add(new PointCollecteSpb2(g.getSommet(1), 4)); // P1 : contenance 4
-            points.add(new PointCollecteSpb2(g.getSommet(2), 3)); // P2 : contenance 3
-            points.add(new PointCollecteSpb2(g.getSommet(3), 3)); // P3 : contenance 3
-            points.add(new PointCollecteSpb2(g.getSommet(4), 5)); // P4 : contenance 5
 
-            // Capacité du camion (à adapter par rapport à l'exemple du prof)
-            int capaciteCamion = 7;
+            for (int i = 0; i < tokens.length; i++) {
+                String t = tokens[i].trim();
+                if (t.isEmpty()) continue;
+                int cont = Integer.parseInt(t);
+                // sommet i+1 : on suppose 0 = dépôt, 1..N = points
+                Sommet s = g.getSommet(i + 1);
+                points.add(new PointCollecteSpb2(s, cont));
+            }
 
-            List<Itineraire> tournees =
-                    AlgoTheme2Hyp2.calculerTournees(g, depot, points, capaciteCamion);
+            List<AlgoTheme2Hyp2.TourneeTheme2> tourneesDetail =
+                    AlgoTheme2Hyp2.calculerTourneesDetail(g, depot, points, capaciteCamion);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Thème 2 - Hypothèse 2\n");
-            sb.append("Fichier : ").append("theme2_test.txt").append("\n");
+            sb.append("Thème 2 - Hypothèse 2 (").append(contexte).append(")\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Dépôt : sommet ").append(depot.getId()).append("\n");
             sb.append("Capacité camion : ").append(capaciteCamion).append("\n");
             sb.append("Nombre de points de collecte : ").append(points.size()).append("\n");
             sb.append("====================================\n\n");
 
             int num = 1;
-            for (Itineraire it : tournees) {
+            for (AlgoTheme2Hyp2.TourneeTheme2 t : tourneesDetail) {
+                Itineraire it = t.getItineraire();
+
                 sb.append("Tournée ").append(num).append(" :\n");
-                sb.append("Distance totale : ").append(it.getDistanceTotal()).append("\n");
-                sb.append("Chemin (sommets) : ");
+                sb.append("  Points de collecte servis :\n");
+                for (PointCollecteSpb2 pc : t.getPoints()) {
+                    sb.append("    - sommet ").append(pc.getSommet().getId())
+                            .append(" (contenance = ").append(pc.getContenance()).append(")\n");
+                }
+                sb.append("  Charge totale tournée : ")
+                        .append(t.getChargeTotale()).append(" / ").append(capaciteCamion).append("\n");
+                sb.append("  Distance totale : ").append(it.getDistanceTotal()).append("\n");
+                sb.append("  Chemin (sommets) : ");
                 for (Sommet s : it.getListSommet()) {
                     sb.append(s.getId()).append(" ");
                 }
@@ -243,6 +292,8 @@ public class GraphController {
 
             outputArea.setText(sb.toString());
 
+        } catch (NumberFormatException ex) {
+            showError("Erreur de format dans les contenances (utilisez des entiers séparés par des virgules).");
         } catch (Exception ex) {
             ex.printStackTrace();
             outputArea.setText("Erreur Thème 2 Hyp 2 : " + ex.getMessage());
@@ -291,4 +342,5 @@ public class GraphController {
         return baos.toString();
     }
 }
+
 
