@@ -4,57 +4,73 @@ import View.GraphView;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
-import java.io.*;
-import Model.Theme3.GestionsSecteurs;
-import Model.Theme3.Secteur;
-import Model.Theme3.AlgoColoration;
-import Model.Graphe.Graphe;
-import Model.Graphe.Sommet;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import Model.Graphe.Graphe;
 import Model.Graphe.Sommet;
 import Model.Algo.Dijkstra;
 import Model.Algo.BFS;
 import Model.ResultatCommun.Itineraire;
+
+// Thème 1 PB2
+import Model.Theme1.Pb2;
+import Model.Theme1.TourneePb2;
+
+// Thème 2 Hyp2
 import Model.Theme2.AlgoTheme2Hyp2;
 import Model.Theme2.PointCollecteSpb2;
 
-import java.util.ArrayList;
-import java.util.List;
+// Thème 3 H1
+import Model.Theme3.GestionsSecteurs;
+import Model.Theme3.Secteur;
+import Model.Theme3.AlgoColoration;
 
 public class GraphController {
 
     private final GraphView view;
+    private String[] allFiles;
 
     public GraphController(GraphView view) {
         this.view = view;
 
-        // On charge la liste des fichiers disponibles dans data/test
-        String[] files = scanTestFiles("data/test");
+        // Charger tous les fichiers de data/test
+        allFiles = scanTestFiles("data/test");
 
         if (view.fileComboTest != null) {
-            view.fileComboTest.setModel(new DefaultComboBoxModel<>(files));
-        }
-        if (view.fileComboCollectivite != null) {
-            view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(files));
+            view.fileComboTest.setModel(new DefaultComboBoxModel<>(allFiles));
         }
         if (view.fileComboEntreprise != null) {
-            view.fileComboEntreprise.setModel(new DefaultComboBoxModel<>(files));
+            view.fileComboEntreprise.setModel(new DefaultComboBoxModel<>(allFiles));
+        }
+        if (view.fileComboCollectivite != null) {
+            view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(allFiles));
         }
 
-        // Raccordement des boutons d'action
+        // Listeners onglet Test
         if (view.runButtonTest != null) {
             view.runButtonTest.addActionListener(this::onRunClickedTest);
         }
+
+        // Listener onglet Collectivité
         if (view.runButtonCollectivite != null) {
             view.runButtonCollectivite.addActionListener(this::onRunClickedCollectivite);
         }
+        if (view.algoComboCollectivite != null) {
+            view.algoComboCollectivite.addActionListener(e -> updateCollectiviteFiles());
+        }
+
+        // Listener onglet Entreprise
         if (view.runButtonEntreprise != null) {
             view.runButtonEntreprise.addActionListener(this::onRunClickedEntreprise);
         }
     }
 
     // =====================================================================
-    //  ONGLET TEST
+    // ONGLET TEST
     // =====================================================================
 
     private void onRunClickedTest(ActionEvent e) {
@@ -84,52 +100,237 @@ public class GraphController {
     }
 
     // =====================================================================
-    //  ONGLET COLLECTIVITE
+    // ONGLET COLLECTIVITÉ
     // =====================================================================
 
     private void onRunClickedCollectivite(ActionEvent e) {
         String fileName = (String) view.fileComboCollectivite.getSelectedItem();
         String algoName = (String) view.algoComboCollectivite.getSelectedItem();
         String departText = view.departFieldCollectivite.getText();
-        String arriveeText = view.arriveeFieldCollectivite.getText();
 
-        if ("Thème 3 - Hypothèse 1".equals(algoName)) {
-            runTheme3H1(fileName, view.secteursConfigAreaCollectivite.getText(), view.outputAreaCollectivite);
+        if (algoName == null) {
+            view.outputAreaCollectivite.setText("Veuillez choisir un problème / thème.");
             return;
         }
 
+        // Thème 1 - PB2
+        if (algoName.startsWith("Thème 1 - PB2 - Cas idéal")) {
+            runPb2CasIdeal(fileName, departText, view.outputAreaCollectivite);
+            return;
+        }
+        if (algoName.startsWith("Thème 1 - PB2 - Cas 2 sommets impairs")) {
+            runPb2Cas2Impairs(fileName, departText, view.outputAreaCollectivite);
+            return;
+        }
+        if (algoName.startsWith("Thème 1 - PB2 - Cas général")) {
+            runPb2CasGeneral(fileName, departText, view.outputAreaCollectivite);
+            return;
+        }
 
-
-        if ("Thème 2 - Hypothèse 2".equals(algoName)) {
-            runTheme2Hyp2(
+        // Thème 3 - H1
+        if ("Thème 3 - Hypothèse 1".equals(algoName)) {
+            runTheme3H1(
                     fileName,
-                    view.capaciteCamionFieldCollectivite.getText(),
-                    view.contenancesFieldCollectivite.getText(),
-                    view.outputAreaCollectivite,
-                    "Collectivité"
+                    view.secteursConfigAreaCollectivite.getText(),
+                    view.outputAreaCollectivite
             );
+            return;
+        }
+
+        // Thème 3 - H2 (pas encore implémenté)
+        if ("Thème 3 - Hypothèse 2".equals(algoName)) {
+            view.outputAreaCollectivite.setText(
+                    "Thème 3 - Hypothèse 2 : pas encore implémenté dans le contrôleur."
+            );
+            return;
+        }
+
+        view.outputAreaCollectivite.setText("Problème non reconnu.");
+    }
+
+    /**
+     * Met à jour la liste des fichiers dans l'onglet Collectivité en fonction du problème PB2 choisi.
+     */
+    private void updateCollectiviteFiles() {
+        String sel = (String) view.algoComboCollectivite.getSelectedItem();
+        if (sel == null) return;
+
+        if (sel.startsWith("Thème 1 - PB2 - Cas idéal")) {
+            // Cas idéal : seulement zeroimpairs.txt
+            setCollectiviteFilesFilter("zeroimpairs.txt");
+        } else if (sel.startsWith("Thème 1 - PB2 - Cas 2 sommets impairs")) {
+            // Cas 2 impairs : seulement deuxsommetimpairs.txt
+            setCollectiviteFilesFilter("deuxsommetimpairs.txt");
+        } else if (sel.startsWith("Thème 1 - PB2 - Cas général")) {
+            // Cas général : tous les fichiers
+            view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(allFiles));
         } else {
-            runItineraire(
-                    fileName,
-                    algoName,
-                    departText,
-                    arriveeText,
-                    view.outputAreaCollectivite,
-                    "Collectivité"
-            );
+            // Thème 3 H1 / H2 : tous les fichiers
+            view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(allFiles));
+        }
+    }
+
+    private void setCollectiviteFilesFilter(String fileNameWanted) {
+        List<String> list = new ArrayList<>();
+        for (String f : allFiles) {
+            if (f.equals(fileNameWanted)) {
+                list.add(f);
+            }
+        }
+        if (list.isEmpty()) {
+            list.add("(fichier " + fileNameWanted + " introuvable)");
+        }
+        view.fileComboCollectivite.setModel(
+                new DefaultComboBoxModel<>(list.toArray(new String[0]))
+        );
+    }
+
+    // ---------- Thème 1 PB2 : cas idéal -----------
+    private void runPb2CasIdeal(String fileName, String depotText, JTextArea out) {
+        if (fileName == null || fileName.startsWith("(fichier")) {
+            out.setText("Fichier zeroimpairs.txt introuvable dans data/test.");
+            return;
+        }
+
+        int idDepot;
+        try {
+            idDepot = Integer.parseInt(depotText.trim());
+        } catch (NumberFormatException ex) {
+            showError("L'id du dépôt doit être un entier.");
+            return;
+        }
+
+        try {
+            String path = "data/test/" + fileName;
+            Graphe g = Graphe.chargerGraphe(path);
+            Sommet depot = g.getSommet(idDepot);
+
+            TourneePb2 tournee = Pb2.casIdeal(g, depot);
+
+            if (tournee == null) {
+                out.setText("Le graphe n'est pas eulérien (cas idéal impossible).");
+                return;
+            }
+
+            String affichage = captureAffichageTourneePb2(tournee);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 1 - PB2 - Cas idéal (0 sommets impairs)\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Dépôt : sommet ").append(idDepot).append("\n");
+            sb.append("====================================\n\n");
+            sb.append(affichage);
+
+            out.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            out.setText("Erreur cas idéal : " + ex.getMessage());
+        }
+    }
+
+    // ---------- Thème 1 PB2 : cas 2 impairs -----------
+    private void runPb2Cas2Impairs(String fileName, String depotText, JTextArea out) {
+        if (fileName == null || fileName.startsWith("(fichier")) {
+            out.setText("Fichier deuxsommetimpairs.txt introuvable dans data/test.");
+            return;
+        }
+
+        int idDepot;
+        try {
+            idDepot = Integer.parseInt(depotText.trim());
+        } catch (NumberFormatException ex) {
+            showError("L'id du dépôt doit être un entier.");
+            return;
+        }
+
+        try {
+            String path = "data/test/" + fileName;
+            Graphe g = Graphe.chargerGraphe(path);
+            Sommet depot = g.getSommet(idDepot);
+
+            TourneePb2 tournee = Pb2.casDeuxImpairs(g, depot);
+
+            if (tournee == null) {
+                out.setText("Erreur : le graphe n'a pas exactement 2 sommets impairs.");
+                return;
+            }
+
+            String affichage = captureAffichageTourneePb2(tournee);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 1 - PB2 - Cas 2 sommets impairs\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Dépôt : sommet ").append(idDepot).append("\n");
+            sb.append("====================================\n\n");
+            sb.append(affichage);
+
+            out.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            out.setText("Erreur cas 2 impairs : " + ex.getMessage());
+        }
+    }
+
+    // ---------- Thème 1 PB2 : cas général -----------
+    private void runPb2CasGeneral(String fileName, String depotText, JTextArea out) {
+        if (fileName == null || fileName.startsWith("(aucun")) {
+            out.setText("Aucun fichier de graphe sélectionné.");
+            return;
+        }
+
+        int idDepot;
+        try {
+            idDepot = Integer.parseInt(depotText.trim());
+        } catch (NumberFormatException ex) {
+            showError("L'id du dépôt doit être un entier.");
+            return;
+        }
+
+        try {
+            String path = "data/test/" + fileName;
+            Graphe g = Graphe.chargerGraphe(path);
+            Sommet depot = g.getSommet(idDepot);
+
+            TourneePb2 tournee = Pb2.casGeneral(g, depot);
+
+            if (tournee == null) {
+                out.setText("Erreur dans le cas général (matching / eulérisation).");
+                return;
+            }
+
+            String affichage = captureAffichageTourneePb2(tournee);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 1 - PB2 - Cas général\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Dépôt : sommet ").append(idDepot).append("\n");
+            sb.append("====================================\n\n");
+            sb.append(affichage);
+
+            out.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            out.setText("Erreur cas général : " + ex.getMessage());
         }
     }
 
     // =====================================================================
-    //  ONGLET ENTREPRISE
+    // ONGLET ENTREPRISE
     // =====================================================================
 
     private void onRunClickedEntreprise(ActionEvent e) {
         String fileName = (String) view.fileComboEntreprise.getSelectedItem();
         String algoName = (String) view.algoComboEntreprise.getSelectedItem();
-        String departText = view.departFieldEntreprise.getText();
-        String arriveeText = view.arriveeFieldEntreprise.getText();
 
+        if (algoName == null) {
+            view.outputAreaEntreprise.setText("Veuillez choisir un problème / thème.");
+            return;
+        }
+
+        // Ici on ne branche vraiment que Thème 2 - Hypothèse 2 pour l'instant
         if ("Thème 2 - Hypothèse 2".equals(algoName)) {
             runTheme2Hyp2(
                     fileName,
@@ -138,20 +339,17 @@ public class GraphController {
                     view.outputAreaEntreprise,
                     "Entreprise de collecte"
             );
-        } else {
-            runItineraire(
-                    fileName,
-                    algoName,
-                    departText,
-                    arriveeText,
-                    view.outputAreaEntreprise,
-                    "Entreprise de collecte"
-            );
+            return;
         }
+
+        view.outputAreaEntreprise.setText(
+                "Le problème sélectionné n'est pas encore implémenté dans l'onglet Entreprise.\n" +
+                        "Tu pourras le brancher plus tard (Thème 1 PB1, Thème 2 AP1/AP2, etc.)."
+        );
     }
 
     // =====================================================================
-    //  Partie commune : Dijkstra / BFS sur un fichier choisi
+    // COMMUN : DIJKSTRA / BFS entre 2 sommets (Test)
     // =====================================================================
 
     private void runItineraire(String fileName,
@@ -216,15 +414,9 @@ public class GraphController {
     }
 
     // =====================================================================
-    //  Thème 2 - Hypothèse 2
+    // Thème 2 - Hypothèse 2 (déjà discuté)
     // =====================================================================
 
-    /**
-     * Lance Thème 2 - Hypothèse 2 sur le fichier choisi.
-     * - Dépôt = sommet 0 (en supposant 0 = centre de traitement dans ton graphe)
-     * - Points de collecte = sommets 1,2,3,... pour lesquels tu donnes une contenance
-     *   dans le champ texte (ex: "2,3,2,4,3,5").
-     */
     private void runTheme2Hyp2(String fileName,
                                String capaciteStr,
                                String contenancesStr,
@@ -253,10 +445,10 @@ public class GraphController {
             String path = "data/test/" + fileName;
             Graphe g = Graphe.chargerGraphe(path);
 
-            // Dépôt : sommet 0 (adapter si besoin)
+            // Dépôt = sommet 0 (adapter si besoin)
             Sommet depot = g.getSommet(0);
 
-            // Parse des contenances : "2,3,2,4,3,5"
+            // Parse contenances : "2,3,2,4,3,5"
             String[] tokens = contenancesStr.split(",");
             List<PointCollecteSpb2> points = new ArrayList<>();
 
@@ -264,8 +456,7 @@ public class GraphController {
                 String t = tokens[i].trim();
                 if (t.isEmpty()) continue;
                 int cont = Integer.parseInt(t);
-                // sommet i+1 : on suppose 0 = dépôt, 1..N = points
-                Sommet s = g.getSommet(i + 1);
+                Sommet s = g.getSommet(i + 1); // on suppose 0 = dépôt, 1..N = points
                 points.add(new PointCollecteSpb2(s, cont));
             }
 
@@ -311,6 +502,10 @@ public class GraphController {
         }
     }
 
+    // =====================================================================
+    // Thème 3 - Hypothèse 1 (coloration de secteurs)
+    // =====================================================================
+
     private void runTheme3H1(String fileName, String secteursConfig, JTextArea outputArea) {
         if (fileName == null || fileName.startsWith("(aucun")) {
             outputArea.setText("Aucun fichier de graphe sélectionné.");
@@ -323,12 +518,12 @@ public class GraphController {
 
             GestionsSecteurs gestion = new GestionsSecteurs();
 
-            // --- Parsing de la config secteurs ---
-            // Format attendu :
+            // Parsing de la config des secteurs
+            // Format :
             // 1: 0,1,6,7
             // 2: 2,3,4,5
             // ...
-            String[] lignes = secteursConfig.split("\\R"); // split sur les retours à la ligne
+            String[] lignes = secteursConfig.split("\\R");
 
             for (String ligne : lignes) {
                 ligne = ligne.trim();
@@ -359,13 +554,10 @@ public class GraphController {
                 gestion.ajouterSecteur(s);
             }
 
-            // Calculer le voisinage entre secteurs
+            // Calcul voisinage + coloration
             gestion.calculerAdjacenceSecteurs(g);
-
-            // Coloration (Welsh-Powell)
             AlgoColoration.colorierWelshPowell(gestion);
 
-            // Construire l'affichage
             StringBuilder sb = new StringBuilder();
             sb.append("Thème 3 - Hypothèse 1 : Planification de secteurs\n");
             sb.append("Fichier : ").append(fileName).append("\n");
@@ -407,7 +599,7 @@ public class GraphController {
     }
 
     // =====================================================================
-    //  Utils
+    // Utils
     // =====================================================================
 
     private void showError(String message) {
@@ -447,6 +639,20 @@ public class GraphController {
 
         return baos.toString();
     }
+
+    private String captureAffichageTourneePb2(TourneePb2 tournee) {
+        PrintStream oldOut = System.out;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        System.setOut(ps);
+
+        try {
+            tournee.afficher();
+        } finally {
+            System.out.flush();
+            System.setOut(oldOut);
+        }
+
+        return baos.toString();
+    }
 }
-
-

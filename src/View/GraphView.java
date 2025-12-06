@@ -14,7 +14,6 @@ public class GraphView extends JFrame {
     public JTextField arriveeFieldTest;
     public JTextArea outputAreaTest;
     public JButton runButtonTest;
-
     public JTextField capaciteCamionFieldTest;
     public JTextField contenancesFieldTest;
     private JLabel capaciteCamionLabelTest;
@@ -28,11 +27,15 @@ public class GraphView extends JFrame {
     public JTextArea outputAreaCollectivite;
     public JButton runButtonCollectivite;
 
+    // labels pour pouvoir cacher/afficher l'arrivée
+    private JLabel departLabelCollectivite;
+    private JLabel arriveeLabelCollectivite;
+
     // Zone pour configuration des secteurs (Thème 3 H1)
     public JTextArea secteursConfigAreaCollectivite;
     private JPanel secteursConfigPanelCollectivite;
 
-    // Si plus tard tu veux une capacité/jours spéciaux pour Th3H2
+    // (éventuels champs pour Thème 3 H2)
     public JTextField capaciteCamionFieldCollectivite;
     public JTextField contenancesFieldCollectivite;
     private JLabel capaciteCamionLabelCollectivite;
@@ -45,7 +48,6 @@ public class GraphView extends JFrame {
     public JTextField arriveeFieldEntreprise;
     public JTextArea outputAreaEntreprise;
     public JButton runButtonEntreprise;
-
     public JTextField capaciteCamionFieldEntreprise;
     public JTextField contenancesFieldEntreprise;
     private JLabel capaciteCamionLabelEntreprise;
@@ -72,9 +74,9 @@ public class GraphView extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    // ============================================================
-    // Onglet TEST
-    // ============================================================
+    // =====================================================================
+    // Onglet TEST (inchangé globalement)
+    // =====================================================================
     private JPanel buildTestTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
@@ -148,9 +150,9 @@ public class GraphView extends JFrame {
         return panel;
     }
 
-    // ============================================================
-    // Onglet COLLECTIVITE
-    // ============================================================
+    // =====================================================================
+    // Onglet COLLECTIVITE (modifié ici)
+    // =====================================================================
     private JPanel buildCollectiviteTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
@@ -167,7 +169,9 @@ public class GraphView extends JFrame {
         departFieldCollectivite = new JTextField("0");
         arriveeFieldCollectivite = new JTextField("1");
 
-        // possibilité d'utiliser plus tard capacité/contenances pour Th3H2
+        departLabelCollectivite = new JLabel("Sommet de départ :");
+        arriveeLabelCollectivite = new JLabel("Sommet d'arrivée :");
+
         capaciteCamionFieldCollectivite = new JTextField("10");
         contenancesFieldCollectivite = new JTextField("2,3,2,4,3,5");
 
@@ -179,7 +183,6 @@ public class GraphView extends JFrame {
         contenancesLabelCollectivite.setVisible(false);
         contenancesFieldCollectivite.setVisible(false);
 
-        // === Panneau haut : fichier / algo / départ / arrivée
         JPanel top = new JPanel(new GridLayout(4, 2, 8, 8));
         top.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -189,13 +192,13 @@ public class GraphView extends JFrame {
         top.add(new JLabel("Problème / Thème :"));
         top.add(algoComboCollectivite);
 
-        top.add(new JLabel("Sommet de départ :"));
+        top.add(departLabelCollectivite);
         top.add(departFieldCollectivite);
 
-        top.add(new JLabel("Sommet d'arrivée :"));
+        top.add(arriveeLabelCollectivite);
         top.add(arriveeFieldCollectivite);
 
-        // === Panneau config des secteurs (Thème 3 H1)
+        // Config secteurs pour Thème 3 H1
         secteursConfigAreaCollectivite = new JTextArea(5, 30);
         secteursConfigAreaCollectivite.setFont(new Font("Monospaced", Font.PLAIN, 12));
         secteursConfigAreaCollectivite.setText(
@@ -206,13 +209,12 @@ public class GraphView extends JFrame {
         );
 
         secteursConfigPanelCollectivite = new JPanel(new BorderLayout(5, 5));
-        JLabel lab = new JLabel("Secteurs (Thème 3 H1) : 1 ligne = idSecteur : sommets séparés par des virgules");
+        JLabel lab = new JLabel("Secteurs (Thème 3 H1) : idSecteur : sommets séparés par virgules");
         secteursConfigPanelCollectivite.add(lab, BorderLayout.NORTH);
         secteursConfigPanelCollectivite.add(new JScrollPane(secteursConfigAreaCollectivite), BorderLayout.CENTER);
         secteursConfigPanelCollectivite.setBorder(BorderFactory.createTitledBorder("Définition des secteurs"));
-        secteursConfigPanelCollectivite.setVisible(false); // affiché seulement pour Thème 3 H1
+        secteursConfigPanelCollectivite.setVisible(false);
 
-        // === Zone de résultat
         outputAreaCollectivite = new JTextArea();
         outputAreaCollectivite.setEditable(false);
         outputAreaCollectivite.setLineWrap(true);
@@ -221,7 +223,6 @@ public class GraphView extends JFrame {
         JScrollPane scrollResult = new JScrollPane(outputAreaCollectivite);
         scrollResult.setBorder(BorderFactory.createTitledBorder("Résultat"));
 
-        // centre = panel avec secteursConfig au-dessus des résultats
         JPanel center = new JPanel(new BorderLayout(5, 5));
         center.add(secteursConfigPanelCollectivite, BorderLayout.NORTH);
         center.add(scrollResult, BorderLayout.CENTER);
@@ -231,7 +232,7 @@ public class GraphView extends JFrame {
         JPanel bottom = new JPanel();
         bottom.add(runButtonCollectivite);
 
-        // Listener pour afficher/cacher la config de secteurs
+        // Listener pour gérer l'affichage arrivée / secteurs / capacités
         algoComboCollectivite.addActionListener(e -> updateCollectiviteVisibility());
 
         panel.add(top, BorderLayout.NORTH);
@@ -241,22 +242,49 @@ public class GraphView extends JFrame {
         return panel;
     }
 
+    /**
+     * Appelé quand on change le problème dans l'onglet Collectivité.
+     * Ici on gère :
+     *  - afficher/cacher le sommet d'arrivée
+     *  - afficher/cacher panneau secteurs (Thème 3 H1)
+     *  - afficher/cacher capacité/contenances pour Thème 3 H2 (si tu le veux plus tard)
+     */
     private void updateCollectiviteVisibility() {
         String sel = (String) algoComboCollectivite.getSelectedItem();
+
+        boolean isPB2 = sel != null && sel.startsWith("Thème 1 - PB2");
         boolean isTheme3H1 = "Thème 3 - Hypothèse 1".equals(sel);
+        boolean isTheme3H2 = "Thème 3 - Hypothèse 2".equals(sel);
+
+        // Thème 1 PB2 : on NE veut que le sommet de départ (pas d'arrivée)
+        if (isPB2) {
+            arriveeLabelCollectivite.setVisible(false);
+            arriveeFieldCollectivite.setVisible(false);
+        } else {
+            arriveeLabelCollectivite.setVisible(true);
+            arriveeFieldCollectivite.setVisible(true);
+        }
+
+        if (isTheme3H1){
+            departLabelCollectivite.setVisible(false);
+            departFieldCollectivite.setVisible(false);
+            arriveeLabelCollectivite.setVisible(false);
+            arriveeFieldCollectivite.setVisible(false);
+        }
+
+        // Panneau secteurs seulement pour Thème 3 H1
         secteursConfigPanelCollectivite.setVisible(isTheme3H1);
 
-        // Si un jour tu veux capacité pour Th3H2 :
-        boolean isTheme3H2 = "Thème 3 - Hypothèse 2".equals(sel);
+        // Capacités pour Thème 3 H2 (optionnel)
         capaciteCamionLabelCollectivite.setVisible(isTheme3H2);
         capaciteCamionFieldCollectivite.setVisible(isTheme3H2);
         contenancesLabelCollectivite.setVisible(isTheme3H2);
         contenancesFieldCollectivite.setVisible(isTheme3H2);
     }
 
-    // ============================================================
-    // Onglet ENTREPRISE
-    // ============================================================
+    // =====================================================================
+    // Onglet ENTREPRISE (comme avant)
+    // =====================================================================
     private JPanel buildEntrepriseTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
@@ -332,3 +360,4 @@ public class GraphView extends JFrame {
         return panel;
     }
 }
+
