@@ -9,7 +9,56 @@ import java.util.*;
 public class CalculItineraire {
 
 
+    public static Itineraire itineraireVersEncombrantavecretour(Graphe g, Sommet depot, Encombrant e) {
+
+        // version PAREIL mais avec le  retour au depot en plus
+
+        Sommet A = e.getLiaison().getPred();
+        Sommet B = e.getLiaison().getSucc();
+        double poids = e.getLiaison().getPoids();
+
+        Itineraire itinDA = Dijkstra.dijkstra(g, depot, A);
+        Itineraire itinDB = Dijkstra.dijkstra(g, depot, B);
+
+        double option1 = itinDA.getDistanceTotal() + poids;
+        double option2 = itinDB.getDistanceTotal() + poids;
+
+        List<Sommet> cheminFinal = new ArrayList<>();
+        double distanceTotale;
+
+        Sommet fin;
+
+        if (option1 <= option2) {
+            cheminFinal.addAll(itinDA.getListSommet());
+            cheminFinal.add(B);
+            fin = B;
+            distanceTotale = option1;
+
+        } else {
+            cheminFinal.addAll(itinDB.getListSommet());
+            cheminFinal.add(A);
+            fin = A;
+            distanceTotale = option2;
+        }
+
+        // retour au depot
+        Itineraire retour = Dijkstra.dijkstra(g, fin, depot);
+
+
+        List<Sommet> chRetour = retour.getListSommet();
+        for (int i = 1; i < chRetour.size(); i++) {
+            cheminFinal.add(chRetour.get(i));
+        }
+
+        distanceTotale += retour.getDistanceTotal();
+
+        return new Itineraire(depot, depot, cheminFinal, distanceTotale);
+    }
+
+
     public static Itineraire itineraireVersEncombrant(Graphe g, Sommet depot, Encombrant e) {
+
+        // utiliser pour la liste d'encombrant
 
         Sommet A = e.getLiaison().getPred();
         Sommet B = e.getLiaison().getSucc();
@@ -86,8 +135,21 @@ public class CalculItineraire {
             restants.remove(meilleur);
         }
 
-        // Itinéraire final
-        return new Itineraire(depot, position, cheminTotal, distanceTotal);
+        // Pour le retour au depot
+
+        Itineraire retour = Dijkstra.dijkstra(g, position, depot);
+
+        // On ajoute les sommets du retour sans dupliquer le premier
+        List<Sommet> chRetour = retour.getListSommet();
+        for (int i = 1; i < chRetour.size(); i++) {
+            cheminTotal.add(chRetour.get(i));
+        }
+
+        // Ajouter la distance du retour
+        distanceTotal += retour.getDistanceTotal();
+
+        // Itinéraire final = départ ET arrivée = dépôt
+        return new Itineraire(depot, depot, cheminTotal, distanceTotal);
     }
 
     public static void mainH01() {
@@ -127,12 +189,13 @@ public class CalculItineraire {
 
             System.out.println("Encombrant ajoutée à la liaison : " + liasionchoisi.getPred().getId() + liasionchoisi.getSucc().getId());
 
-            Itineraire itin = itineraireVersEncombrant(g, depot, e);
+            Itineraire itin = itineraireVersEncombrantavecretour(g, depot, e);
 
 
             System.out.println("\n=== Résultat H01 ===");
             System.out.println("On est allé chercher l'encombrant à l'arête : " + e.getLiaison().getPred().getId() + e.getLiaison().getSucc().getId());
             itin.afficher();
+
 
         } catch (Exception e) {
             System.err.println("Erreur H01 : " + e.getMessage());
