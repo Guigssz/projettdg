@@ -17,15 +17,15 @@ public class PlusProcheVoisin {
             List<PointCollecte> pcs)
     {
         List<PointCollecte> restants = new ArrayList<>(pcs);
-        List<Integer> ordrePoints = new ArrayList<>();
+        List<PointCollecte> ordre = new ArrayList<>();
         double total = 0;
 
-        PointCollecte actuel = null; // null = on part du dépôt
+        PointCollecte actuel = null;
 
         while (!restants.isEmpty()) {
 
             PointCollecte best = null;
-            double bestD = Double.MAX_VALUE;
+            double bestD = 1000000.0;
 
             for (PointCollecte pc : restants) {
 
@@ -40,18 +40,17 @@ public class PlusProcheVoisin {
             }
 
             total += bestD;
-            ordrePoints.add(pcs.indexOf(best));
-
+            ordre.add(best);
             restants.remove(best);
             actuel = best;
         }
 
-        return new Tournee(depot, ordrePoints, total);
+        return new Tournee(depot, ordre, total);
     }
 
     public static void main(String[] args) {
 
-        String fichierin = "data/test/adjmarc.txt";
+        String fichierin = "data/test/marcoriente.txt";
 
         try {
             Graphe graphe = Graphe.chargerGraphe(fichierin);
@@ -62,13 +61,13 @@ public class PlusProcheVoisin {
 
             Scanner sc = new Scanner(System.in);
 
-            // ----- Choix du dépôt -----
+            // depot
             System.out.print("Sommet du dépôt : ");
             int idDepot = sc.nextInt();
             Sommet depot = graphe.getSommet(idDepot);
 
 
-            // ----- Choix des points de collecte -----
+            // choix point de collecte
             System.out.print("Nombre de points de collecte : ");
             int nb = sc.nextInt();
 
@@ -93,17 +92,12 @@ public class PlusProcheVoisin {
             }
 
 
-            // ----- Calcul de la matrice de distances -----
             CalcDistances calc = new CalcDistances(graphe);
             calc.calcMatDistance();
             Map<Sommet, Map<Sommet, Double>> matDist = calc.getMatDistance();
 
-
-            // ----- Lancement du PPV -----
             Tournee tournee = PlusProcheVoisin.ppv(matDist, depot, points);
 
-
-            // ----- Affichage -----
             System.out.println("\n===== RÉSULTAT TSP APPROCHE PPV =====");
             tournee.afficher();
 
@@ -113,8 +107,5 @@ public class PlusProcheVoisin {
             e.printStackTrace();
         }
     }
-
-
-
 
 }

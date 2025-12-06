@@ -158,7 +158,6 @@ public class CalculItineraire {
         //l’itinéraire le plus court permettant de se rendre chez un
         //particulier.
 
-
         try {
             Scanner sc = new Scanner(System.in);
 
@@ -310,6 +309,5 @@ public class CalculItineraire {
             System.out.println("nop");
         }
     }
-
 
 }

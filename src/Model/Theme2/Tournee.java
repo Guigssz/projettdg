@@ -7,24 +7,26 @@ import java.util.*;
 public class Tournee {
 
     private Sommet depot;
-    private List<Integer> ordrePoints; // index des PC visités
-    private double distanceTotale;
+    private List<PointCollecte> ordre;
+    private double total;
 
-    public Tournee(Sommet depot, List<Integer> ordrePoints, double distanceTotale) {
+    public Tournee(Sommet depot, List<PointCollecte> ordre, double total) {
         this.depot = depot;
-        this.ordrePoints = ordrePoints;
-        this.distanceTotale = distanceTotale;
+        this.ordre = ordre;
+        this.total = total;
     }
 
     public void afficher() {
+        System.out.println("Départ du dépôt : " + depot.getId());
+        System.out.println("Ordre de visite des PC :");
 
-        System.out.print("Tournée : D(" + depot.getId() + ") -> ");
-
-        for (Integer i : ordrePoints) {
-            System.out.print("PC" + i + " -> ");
+        for (PointCollecte pc : ordre) {
+            System.out.println("- PC sur liaison "
+                    + pc.getU().getId() + " → " + pc.getV().getId()
+                    + (pc.getArete().getOriente() ? " (sens unique)" : ""));
         }
 
-        System.out.println("D(" + depot.getId() + ")");
-        System.out.println("Distance totale : " + distanceTotale);
+        System.out.println("Distance totale : " + total);
     }
 }
+

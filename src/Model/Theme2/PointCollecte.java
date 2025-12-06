@@ -17,54 +17,59 @@ public class PointCollecte {
     public Sommet getV() { return arete.getSucc(); }
     public double getLongueurArete() { return arete.getPoids(); }
 
-    // -----------------------------
-    // Distance Sommet -> PointCollecte
-    // -----------------------------
-    public static double distSommetToPC(
-            Map<Sommet, Map<Sommet, Double>> matDist,
-            Sommet s,
-            PointCollecte pc)
+
+    public static double distSommetToPC(Map<Sommet, Map<Sommet, Double>> matDist, Sommet s, PointCollecte pc)
     {
         Sommet u = pc.getU();
         Sommet v = pc.getV();
 
         double L = pc.getLongueurArete();
 
-        // On traverse toute l'arête du PC
+        if (pc.getArete().getOriente()) {
+            return matDist.get(s).get(u) + L;
+        }
+
+        // On traverse toute l'arete du PC
         double viaU = matDist.get(s).get(u) + L;
         double viaV = matDist.get(s).get(v) + L;
 
         return Math.min(viaU, viaV);
     }
 
-    // -----------------------------
-    // Distance PointCollecte -> PointCollecte
-    // -----------------------------
-    public static double distPCtoPC(
-            Map<Sommet, Map<Sommet, Double>> matDist,
-            PointCollecte a,
-            PointCollecte b)
+    public static double distPCtoPC(Map<Sommet, Map<Sommet, Double>> matDist, PointCollecte a, PointCollecte b)
     {
-        Sommet au = a.getU();
-        Sommet av = a.getV();
-        Sommet bu = b.getU();
-        Sommet bv = b.getV();
+        // Déterminer les points d’entrée possibles en A
+        Sommet aU = a.getU();
+        Sommet aV = a.getV();
+        Sommet bU = b.getU();
+        Sommet bV = b.getV();
 
         double La = a.getLongueurArete();
         double Lb = b.getLongueurArete();
 
-        // Cas 1 : a(U→V) puis U→V pour b
-        double opt1 = matDist.get(au).get(bu) + La + Lb;
+        double best = Double.MAX_VALUE;
 
-        // Cas 2 : a(U→V) -> B→U
-        double opt2 = matDist.get(au).get(bv) + La + Lb;
+        // Définir les extrémités valides selon HO1/HO2
+        Sommet[] entreesA = a.getArete().getOriente()
+                ? new Sommet[]{ aU }              // HO2 : entrée obligatoirement par U
+                : new Sommet[]{ aU, aV };         // HO1 : entrée libre
 
-        // Cas 3 : a(V→U) -> U→V
-        double opt3 = matDist.get(av).get(bu) + La + Lb;
+        Sommet[] entreesB = b.getArete().getOriente()
+                ? new Sommet[]{ bU }              // HO2 : entrée obligatoirement par U
+                : new Sommet[]{ bU, bV };         // HO1 : entrée libre
 
-        // Cas 4 : a(V→U) -> V→U
-        double opt4 = matDist.get(av).get(bv) + La + Lb;
+        // Calculer toutes les combinaisons valides
+        for (Sommet sa : entreesA) {
+            for (Sommet sb : entreesB) {
+                double d = matDist.get(sa).get(sb) + La + Lb;
+                best = Math.min(best, d);
+            }
+        }
 
-        return Math.min(Math.min(opt1, opt2), Math.min(opt3, opt4));
+        return best;
     }
+
+
+
+
 }
