@@ -58,7 +58,7 @@ public class GraphView extends JFrame {
     private JLabel capaciteCamionLabelEntreprise;
     private JLabel contenancesLabelEntreprise;
 
-    // Liste d'arêtes pour Thème 1 PB1 (H1 + H2)
+    // Liste d'arêtes (pour PB1 & Thème 2 AP1)
     public JList<String> liaisonsListEntreprise;
     public JPanel liaisonsPanelEntreprise;
 
@@ -269,7 +269,7 @@ public class GraphView extends JFrame {
             arriveeLabelCollectivite.setVisible(false);
             arriveeFieldCollectivite.setVisible(false);
         } else {
-            // Autres cas (ex: Thème 3 H2) : départ + arrivée visibles
+            // Autres cas (ex: Thème 3 H2)
             departLabelCollectivite.setVisible(true);
             departFieldCollectivite.setVisible(true);
             arriveeLabelCollectivite.setVisible(true);
@@ -324,7 +324,7 @@ public class GraphView extends JFrame {
 
         liaisonsPanelEntreprise = new JPanel(new BorderLayout(5, 5));
         liaisonsPanelEntreprise.setBorder(
-                BorderFactory.createTitledBorder("Arêtes (choix des encombrants - Thème 1 PB1)")
+                BorderFactory.createTitledBorder("Arêtes (PB1 & Thème 2 AP1)")
         );
         liaisonsPanelEntreprise.add(new JLabel("Sélectionnez une ou plusieurs arêtes :"), BorderLayout.NORTH);
         liaisonsPanelEntreprise.add(scrollLiaisons, BorderLayout.CENTER);
@@ -378,10 +378,12 @@ public class GraphView extends JFrame {
         if (sel == null) return;
 
         boolean isPB1 = sel.startsWith("Thème 1 - PB1");
+        boolean isPPV = "Thème 2 - Approche 1 (Plus proche voisin)".equals(sel);
         boolean isMST = "Thème 2 - Approche 2 (MST)".equals(sel);
 
-        // Liste des arêtes : seulement pour Thème 1 PB1 (H1 & H2)
-        liaisonsPanelEntreprise.setVisible(isPB1);
+        // Liste des arêtes : PB1 H1 + PB1 H2 + Thème 2 AP1
+        boolean needsEdges = isPB1 || isPPV;
+        liaisonsPanelEntreprise.setVisible(needsEdges);
 
         // Capacité / contenances : seulement pour Thème 2 MST
         capaciteCamionLabelEntreprise.setVisible(isMST);

@@ -25,9 +25,14 @@ import Model.Theme1.Encombrant;
 import Model.Theme1.Pb2;
 import Model.Theme1.TourneePb2;
 
-// Thème 2 (MST + capacité = ton ancienne Hyp2)
+// Thème 2 MST (ex-Hyp2)
 import Model.Theme2.AlgoTheme2Hyp2;
 import Model.Theme2.PointCollecteSpb2;
+
+// Thème 2 Approche 1 (PPV)
+import Model.Theme2.PointCollecte;
+import Model.Theme2.CalcDistances;
+import Model.Algo.PlusProcheVoisin;
 
 // Thème 3 H1
 import Model.Theme3.GestionsSecteurs;
@@ -81,7 +86,9 @@ public class GraphController {
         if (view.algoComboEntreprise != null) {
             view.algoComboEntreprise.addActionListener(e -> {
                 String sel = (String) view.algoComboEntreprise.getSelectedItem();
-                if (sel != null && sel.startsWith("Thème 1 - PB1")) {
+                if (sel != null &&
+                        (sel.startsWith("Thème 1 - PB1")
+                                || "Thème 2 - Approche 1 (Plus proche voisin)".equals(sel))) {
                     updateEntrepriseEdgesList();
                 }
             });
@@ -155,7 +162,7 @@ public class GraphController {
             return;
         }
 
-        // Thème 3 H2 (placeholder pour plus tard)
+        // Thème 3 H2 (placeholder)
         if ("Thème 3 - Hypothèse 2".equals(algoName)) {
             view.outputAreaCollectivite.setText("Thème 3 - Hypothèse 2 : pas encore implémenté.");
             return;
@@ -175,7 +182,6 @@ public class GraphController {
         } else if (sel.startsWith("Thème 1 - PB2 - Cas général")) {
             view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(allFiles));
         } else {
-            // Thème 3 H1 / H2 -> tous les fichiers
             view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(allFiles));
         }
     }
@@ -213,8 +219,12 @@ public class GraphController {
             return;
         }
 
+        if ("Thème 2 - Approche 1 (Plus proche voisin)".equals(algoName)) {
+            runTheme2Approche1(fileName);
+            return;
+        }
+
         if ("Thème 2 - Approche 2 (MST)".equals(algoName)) {
-            // On lit le dépôt depuis l'interface
             Integer idDepot = null;
             try {
                 idDepot = Integer.parseInt(view.departFieldEntreprise.getText().trim());
@@ -235,8 +245,7 @@ public class GraphController {
         }
 
         view.outputAreaEntreprise.setText(
-                "Le problème sélectionné n'est pas encore implémenté dans l'onglet Entreprise.\n" +
-                        "Tu pourras brancher Thème 2 - Approche 1, etc. plus tard."
+                "Le problème sélectionné n'est pas encore implémenté dans l'onglet Entreprise."
         );
     }
 
@@ -432,6 +441,94 @@ public class GraphController {
         }
     }
 
+    // ---------- Thème 2 - Approche 1 (PPV) ----------
+    private void runTheme2Approche1(String fileName) {
+        JTextArea out = view.outputAreaEntreprise;
+
+        if (fileName == null || fileName.startsWith("(aucun")) {
+            out.setText("Aucun fichier de graphe sélectionné.");
+            return;
+        }
+
+        if (lastGraphEntrepriseEdges == null || !fileName.equals(lastGraphEntrepriseFile)) {
+            updateEntrepriseEdgesList();
+        }
+        Graphe g = lastGraphEntrepriseEdges;
+        if (g == null) {
+            out.setText("Impossible de charger le graphe.");
+            return;
+        }
+
+        int idDepot;
+        try {
+            idDepot = Integer.parseInt(view.departFieldEntreprise.getText().trim());
+        } catch (NumberFormatException ex) {
+            showError("L'id du dépôt doit être un entier.");
+            return;
+        }
+
+        Sommet depot = g.getSommet(idDepot);
+        if (depot == null) {
+            out.setText("Sommet de dépôt " + idDepot + " introuvable.");
+            return;
+        }
+
+        int[] indices = view.liaisonsListEntreprise.getSelectedIndices();
+        if (indices == null || indices.length == 0) {
+            out.setText("Veuillez sélectionner au moins une arête (points de collecte).");
+            return;
+        }
+
+        List<Liaison> liaisons = g.getLiaison();
+        List<PointCollecte> points = new ArrayList<>();
+
+        for (int idx : indices) {
+            if (idx >= 0 && idx < liaisons.size()) {
+                Liaison l = liaisons.get(idx);
+                points.add(new PointCollecte(l));
+            }
+        }
+
+        if (points.isEmpty()) {
+            out.setText("La liste de points de collecte est vide.");
+            return;
+        }
+
+        try {
+            CalcDistances calc = new CalcDistances(g);
+            calc.calcMatDistance();
+            var matDist = calc.getMatDistance();
+
+            Model.Theme2.Tournee tournee = PlusProcheVoisin.ppv(matDist, depot, points);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 2 - Approche 1 (Plus proche voisin)\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Dépôt : sommet ").append(idDepot).append("\n");
+            sb.append("Points de collecte (arêtes sélectionnées) :\n");
+            for (PointCollecte pc : points) {
+                Liaison l = pc.getArete();
+                sb.append("  - ")
+                        .append(l.getPred().getId())
+                        .append(" - ")
+                        .append(l.getSucc().getId())
+                        .append("  (longueur = ").append(l.getPoids()).append(")\n");
+            }
+
+            sb.append("====================================\n\n");
+            sb.append(captureAffichageTourneeTheme2(tournee));
+
+            sb.append("\n(Note : cette approche PPV ne met pas automatiquement le retour au dépôt,\n");
+            sb.append("c'est exactement le comportement de ton main de test.)\n");
+
+            out.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            out.setText("Erreur Thème 2 Approche 1 : " + ex.getMessage());
+        }
+    }
+
     // =====================================================================
     // DIJKSTRA/BFS pour l’onglet Test
     // =====================================================================
@@ -493,7 +590,7 @@ public class GraphController {
     }
 
     // =====================================================================
-    // Thème 2 - MST + capacité (ex-Hypothèse 2)
+    // Thème 2 - MST + capacité
     // =====================================================================
     private void runTheme2MST(String fileName,
                               String capaciteStr,
@@ -825,6 +922,20 @@ public class GraphController {
     }
 
     private String captureAffichageTourneePb2(TourneePb2 tournee) {
+        PrintStream oldOut = System.out;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        System.setOut(ps);
+        try {
+            tournee.afficher();
+        } finally {
+            System.out.flush();
+            System.setOut(oldOut);
+        }
+        return baos.toString();
+    }
+
+    private String captureAffichageTourneeTheme2(Model.Theme2.Tournee tournee) {
         PrintStream oldOut = System.out;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
