@@ -17,15 +17,15 @@ import Model.Algo.Dijkstra;
 import Model.Algo.BFS;
 import Model.ResultatCommun.Itineraire;
 
-// Thème 1 PB2
-import Model.Theme1.Pb2;
-import Model.Theme1.TourneePb2;
-
 // Thème 1 PB1
 import Model.Theme1.CalculItineraire;
 import Model.Theme1.Encombrant;
 
-// Thème 2 Hyp2
+// Thème 1 PB2
+import Model.Theme1.Pb2;
+import Model.Theme1.TourneePb2;
+
+// Thème 2 (MST + capacité = ton ancienne Hyp2)
 import Model.Theme2.AlgoTheme2Hyp2;
 import Model.Theme2.PointCollecteSpb2;
 
@@ -39,7 +39,7 @@ public class GraphController {
     private final GraphView view;
     private String[] allFiles;
 
-    // cache du graphe utilisé pour la liste d'arêtes (Entreprise)
+    // cache pour la liste d'arêtes en onglet Entreprise
     private Graphe lastGraphEntrepriseEdges;
     private String lastGraphEntrepriseFile;
 
@@ -58,12 +58,12 @@ public class GraphController {
             view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(allFiles));
         }
 
-        // Listeners onglet Test
+        // Onglet Test
         if (view.runButtonTest != null) {
             view.runButtonTest.addActionListener(this::onRunClickedTest);
         }
 
-        // Listeners onglet Collectivité
+        // Onglet Collectivité
         if (view.runButtonCollectivite != null) {
             view.runButtonCollectivite.addActionListener(this::onRunClickedCollectivite);
         }
@@ -71,7 +71,7 @@ public class GraphController {
             view.algoComboCollectivite.addActionListener(e -> updateCollectiviteFiles());
         }
 
-        // Listeners onglet Entreprise
+        // Onglet Entreprise
         if (view.runButtonEntreprise != null) {
             view.runButtonEntreprise.addActionListener(this::onRunClickedEntreprise);
         }
@@ -98,12 +98,13 @@ public class GraphController {
         String arriveeText = view.arriveeFieldTest.getText();
 
         if ("Thème 2 - Hypothèse 2".equals(algoName)) {
-            runTheme2Hyp2(
+            runTheme2MST(
                     fileName,
                     view.capaciteCamionFieldTest.getText(),
                     view.contenancesFieldTest.getText(),
                     view.outputAreaTest,
-                    "Mode TEST"
+                    "Mode TEST",
+                    null   // depot = 0 par défaut pour le mode test
             );
         } else {
             runItineraire(
@@ -130,7 +131,7 @@ public class GraphController {
             return;
         }
 
-        // Thème 1 - PB2
+        // Thème 1 PB2
         if (algoName.startsWith("Thème 1 - PB2 - Cas idéal")) {
             runPb2CasIdeal(fileName, departText, view.outputAreaCollectivite);
             return;
@@ -154,11 +155,9 @@ public class GraphController {
             return;
         }
 
-        // Thème 3 H2 : non implémenté pour l'instant
+        // Thème 3 H2 (placeholder pour plus tard)
         if ("Thème 3 - Hypothèse 2".equals(algoName)) {
-            view.outputAreaCollectivite.setText(
-                    "Thème 3 - Hypothèse 2 : pas encore implémenté dans le contrôleur."
-            );
+            view.outputAreaCollectivite.setText("Thème 3 - Hypothèse 2 : pas encore implémenté.");
             return;
         }
 
@@ -176,156 +175,20 @@ public class GraphController {
         } else if (sel.startsWith("Thème 1 - PB2 - Cas général")) {
             view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(allFiles));
         } else {
-            // Thème 3 H1 / H2
+            // Thème 3 H1 / H2 -> tous les fichiers
             view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(allFiles));
         }
     }
 
-    private void setCollectiviteFilesFilter(String fileNameWanted) {
+    private void setCollectiviteFilesFilter(String wanted) {
         List<String> list = new ArrayList<>();
         for (String f : allFiles) {
-            if (f.equals(fileNameWanted)) {
-                list.add(f);
-            }
+            if (f.equals(wanted)) list.add(f);
         }
         if (list.isEmpty()) {
-            list.add("(fichier " + fileNameWanted + " introuvable)");
+            list.add("(fichier " + wanted + " introuvable)");
         }
-        view.fileComboCollectivite.setModel(
-                new DefaultComboBoxModel<>(list.toArray(new String[0]))
-        );
-    }
-
-    // ---------- Thème 1 PB2 : cas idéal ----------
-    private void runPb2CasIdeal(String fileName, String depotText, JTextArea out) {
-        if (fileName == null || fileName.startsWith("(fichier")) {
-            out.setText("Fichier zeroimpairs.txt introuvable dans data/test.");
-            return;
-        }
-
-        int idDepot;
-        try {
-            idDepot = Integer.parseInt(depotText.trim());
-        } catch (NumberFormatException ex) {
-            showError("L'id du dépôt doit être un entier.");
-            return;
-        }
-
-        try {
-            String path = "data/test/" + fileName;
-            Graphe g = Graphe.chargerGraphe(path);
-            Sommet depot = g.getSommet(idDepot);
-
-            TourneePb2 tournee = Pb2.casIdeal(g, depot);
-
-            if (tournee == null) {
-                out.setText("Le graphe n'est pas eulérien (cas idéal impossible).");
-                return;
-            }
-
-            String affichage = captureAffichageTourneePb2(tournee);
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("Thème 1 - PB2 - Cas idéal (0 sommets impairs)\n");
-            sb.append("Fichier : ").append(fileName).append("\n");
-            sb.append("Dépôt : sommet ").append(idDepot).append("\n");
-            sb.append("====================================\n\n");
-            sb.append(affichage);
-
-            out.setText(sb.toString());
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            out.setText("Erreur cas idéal : " + ex.getMessage());
-        }
-    }
-
-    // ---------- Thème 1 PB2 : cas 2 impairs ----------
-    private void runPb2Cas2Impairs(String fileName, String depotText, JTextArea out) {
-        if (fileName == null || fileName.startsWith("(fichier")) {
-            out.setText("Fichier deuxsommetimpairs.txt introuvable dans data/test.");
-            return;
-        }
-
-        int idDepot;
-        try {
-            idDepot = Integer.parseInt(depotText.trim());
-        } catch (NumberFormatException ex) {
-            showError("L'id du dépôt doit être un entier.");
-            return;
-        }
-
-        try {
-            String path = "data/test/" + fileName;
-            Graphe g = Graphe.chargerGraphe(path);
-            Sommet depot = g.getSommet(idDepot);
-
-            TourneePb2 tournee = Pb2.casDeuxImpairs(g, depot);
-
-            if (tournee == null) {
-                out.setText("Erreur : le graphe n'a pas exactement 2 sommets impairs.");
-                return;
-            }
-
-            String affichage = captureAffichageTourneePb2(tournee);
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("Thème 1 - PB2 - Cas 2 sommets impairs\n");
-            sb.append("Fichier : ").append(fileName).append("\n");
-            sb.append("Dépôt : sommet ").append(idDepot).append("\n");
-            sb.append("====================================\n\n");
-            sb.append(affichage);
-
-            out.setText(sb.toString());
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            out.setText("Erreur cas 2 impairs : " + ex.getMessage());
-        }
-    }
-
-    // ---------- Thème 1 PB2 : cas général ----------
-    private void runPb2CasGeneral(String fileName, String depotText, JTextArea out) {
-        if (fileName == null || fileName.startsWith("(aucun")) {
-            out.setText("Aucun fichier de graphe sélectionné.");
-            return;
-        }
-
-        int idDepot;
-        try {
-            idDepot = Integer.parseInt(depotText.trim());
-        } catch (NumberFormatException ex) {
-            showError("L'id du dépôt doit être un entier.");
-            return;
-        }
-
-        try {
-            String path = "data/test/" + fileName;
-            Graphe g = Graphe.chargerGraphe(path);
-            Sommet depot = g.getSommet(idDepot);
-
-            TourneePb2 tournee = Pb2.casGeneral(g, depot);
-
-            if (tournee == null) {
-                out.setText("Erreur dans le cas général (matching / eulérisation).");
-                return;
-            }
-
-            String affichage = captureAffichageTourneePb2(tournee);
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("Thème 1 - PB2 - Cas général\n");
-            sb.append("Fichier : ").append(fileName).append("\n");
-            sb.append("Dépôt : sommet ").append(idDepot).append("\n");
-            sb.append("====================================\n\n");
-            sb.append(affichage);
-
-            out.setText(sb.toString());
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            out.setText("Erreur cas général : " + ex.getMessage());
-        }
+        view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(list.toArray(new String[0])));
     }
 
     // =====================================================================
@@ -340,29 +203,40 @@ public class GraphController {
             return;
         }
 
-        // Thème 1 - PB1 - H1
         if ("Thème 1 - PB1 - H1 (1 encombrant)".equals(algoName)) {
             runTheme1PB1H1(fileName);
             return;
         }
 
-        // (plus tard : Thème 1 PB1 H2 ici)
+        if ("Thème 1 - PB1 - H2 (plusieurs encombrants)".equals(algoName)) {
+            runTheme1PB1H2(fileName);
+            return;
+        }
 
-        // Thème 2 - Hypothèse 2
-        if ("Thème 2 - Hypothèse 2".equals(algoName)) {
-            runTheme2Hyp2(
+        if ("Thème 2 - Approche 2 (MST)".equals(algoName)) {
+            // On lit le dépôt depuis l'interface
+            Integer idDepot = null;
+            try {
+                idDepot = Integer.parseInt(view.departFieldEntreprise.getText().trim());
+            } catch (NumberFormatException ex) {
+                showError("L'id du dépôt doit être un entier.");
+                return;
+            }
+
+            runTheme2MST(
                     fileName,
                     view.capaciteCamionFieldEntreprise.getText(),
                     view.contenancesFieldEntreprise.getText(),
                     view.outputAreaEntreprise,
-                    "Entreprise de collecte"
+                    "Entreprise de collecte",
+                    idDepot
             );
             return;
         }
 
         view.outputAreaEntreprise.setText(
                 "Le problème sélectionné n'est pas encore implémenté dans l'onglet Entreprise.\n" +
-                        "Tu pourras le brancher plus tard (Thème 1 PB1 H2, Thème 2 AP1/AP2, etc.)."
+                        "Tu pourras brancher Thème 2 - Approche 1, etc. plus tard."
         );
     }
 
@@ -409,6 +283,7 @@ public class GraphController {
         }
     }
 
+    // ---------- Thème 1 PB1 H1 ----------
     private void runTheme1PB1H1(String fileName) {
         JTextArea out = view.outputAreaEntreprise;
 
@@ -420,10 +295,9 @@ public class GraphController {
         if (lastGraphEntrepriseEdges == null || !fileName.equals(lastGraphEntrepriseFile)) {
             updateEntrepriseEdgesList();
         }
-
         Graphe g = lastGraphEntrepriseEdges;
         if (g == null) {
-            out.setText("Impossible de charger le graphe pour Thème 1 PB1 H1.");
+            out.setText("Impossible de charger le graphe.");
             return;
         }
 
@@ -437,13 +311,13 @@ public class GraphController {
 
         Sommet depot = g.getSommet(idDepot);
         if (depot == null) {
-            out.setText("Sommet de dépôt " + idDepot + " introuvable dans le graphe.");
+            out.setText("Sommet de dépôt " + idDepot + " introuvable.");
             return;
         }
 
         int index = view.liaisonsListEntreprise.getSelectedIndex();
         if (index < 0) {
-            out.setText("Veuillez sélectionner une arête dans la liste pour placer l'encombrant.");
+            out.setText("Veuillez sélectionner une arête pour l'encombrant.");
             return;
         }
 
@@ -469,7 +343,6 @@ public class GraphController {
                     .append(liaisonChoisie.getSucc().getId())
                     .append("\n");
             sb.append("====================================\n\n");
-
             sb.append(captureAffichageItineraire(itin));
 
             out.setText(sb.toString());
@@ -480,8 +353,87 @@ public class GraphController {
         }
     }
 
+    // ---------- Thème 1 PB1 H2 ----------
+    private void runTheme1PB1H2(String fileName) {
+        JTextArea out = view.outputAreaEntreprise;
+
+        if (fileName == null || fileName.startsWith("(aucun")) {
+            out.setText("Aucun fichier de graphe sélectionné.");
+            return;
+        }
+
+        if (lastGraphEntrepriseEdges == null || !fileName.equals(lastGraphEntrepriseFile)) {
+            updateEntrepriseEdgesList();
+        }
+        Graphe g = lastGraphEntrepriseEdges;
+        if (g == null) {
+            out.setText("Impossible de charger le graphe.");
+            return;
+        }
+
+        int idDepot;
+        try {
+            idDepot = Integer.parseInt(view.departFieldEntreprise.getText().trim());
+        } catch (NumberFormatException ex) {
+            showError("L'id du dépôt doit être un entier.");
+            return;
+        }
+
+        Sommet depot = g.getSommet(idDepot);
+        if (depot == null) {
+            out.setText("Sommet de dépôt " + idDepot + " introuvable.");
+            return;
+        }
+
+        int[] indices = view.liaisonsListEntreprise.getSelectedIndices();
+        if (indices == null || indices.length == 0) {
+            out.setText("Veuillez sélectionner au moins une arête (plusieurs encombrants).");
+            return;
+        }
+
+        List<Liaison> liaisons = g.getLiaison();
+        List<Encombrant> listeEncombrants = new ArrayList<>();
+
+        for (int idx : indices) {
+            if (idx >= 0 && idx < liaisons.size()) {
+                Liaison l = liaisons.get(idx);
+                listeEncombrants.add(new Encombrant(l));
+            }
+        }
+
+        if (listeEncombrants.isEmpty()) {
+            out.setText("La liste d'encombrants est vide.");
+            return;
+        }
+
+        try {
+            Itineraire itin = CalculItineraire.itineraireversListeEncombrants(g, depot, listeEncombrants);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 1 - PB1 - Hypothèse 2 (plusieurs encombrants)\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Dépôt : sommet ").append(idDepot).append("\n");
+            sb.append("Encombrants sur arêtes :\n");
+            for (Encombrant enc : listeEncombrants) {
+                sb.append("  - ")
+                        .append(enc.getLiaison().getPred().getId())
+                        .append(" - ")
+                        .append(enc.getLiaison().getSucc().getId())
+                        .append("\n");
+            }
+            sb.append("====================================\n\n");
+            sb.append(captureAffichageItineraire(itin));
+
+            out.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            out.setText("Erreur Thème 1 PB1 H2 : " + ex.getMessage());
+        }
+    }
+
     // =====================================================================
-    // Commun : Dijkstra / BFS sur Test
+    // DIJKSTRA/BFS pour l’onglet Test
     // =====================================================================
     private void runItineraire(String fileName,
                                String algoName,
@@ -495,9 +447,7 @@ public class GraphController {
             return;
         }
 
-        int idDepart;
-        int idArrivee;
-
+        int idDepart, idArrivee;
         try {
             idDepart = Integer.parseInt(departText.trim());
             idArrivee = Integer.parseInt(arriveeText.trim());
@@ -514,7 +464,6 @@ public class GraphController {
             Sommet arrivee = g.getSommet(idArrivee);
 
             Itineraire itineraire = null;
-
             if ("Dijkstra".equals(algoName)) {
                 itineraire = Dijkstra.dijkstra(g, depart, arrivee);
             } else if ("BFS".equals(algoName)) {
@@ -523,18 +472,19 @@ public class GraphController {
 
             if (itineraire == null) {
                 outputArea.setText("Aucun chemin trouvé.");
-            } else {
-                String texte = captureAffichageItineraire(itineraire);
-
-                StringBuilder sb = new StringBuilder();
-                sb.append(headerContexte).append("\n\n");
-                sb.append("Fichier : ").append(fileName).append("\n");
-                sb.append("Algorithme : ").append(algoName).append("\n");
-                sb.append("----------------------------------------\n");
-                sb.append(texte);
-
-                outputArea.setText(sb.toString());
+                return;
             }
+
+            String texte = captureAffichageItineraire(itineraire);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(headerContexte).append("\n\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Algorithme : ").append(algoName).append("\n");
+            sb.append("----------------------------------------\n");
+            sb.append(texte);
+
+            outputArea.setText(sb.toString());
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -543,13 +493,14 @@ public class GraphController {
     }
 
     // =====================================================================
-    // Thème 2 - Hypothèse 2
+    // Thème 2 - MST + capacité (ex-Hypothèse 2)
     // =====================================================================
-    private void runTheme2Hyp2(String fileName,
-                               String capaciteStr,
-                               String contenancesStr,
-                               JTextArea outputArea,
-                               String contexte) {
+    private void runTheme2MST(String fileName,
+                              String capaciteStr,
+                              String contenancesStr,
+                              JTextArea outputArea,
+                              String contexte,
+                              Integer idDepotOpt) {
 
         if (fileName == null || fileName.startsWith("(aucun")) {
             showError("Aucun fichier de graphe trouvé dans data/test.");
@@ -573,7 +524,8 @@ public class GraphController {
             String path = "data/test/" + fileName;
             Graphe g = Graphe.chargerGraphe(path);
 
-            Sommet depot = g.getSommet(0);
+            int depotId = (idDepotOpt != null) ? idDepotOpt : 0;
+            Sommet depot = g.getSommet(depotId);
 
             String[] tokens = contenancesStr.split(",");
             List<PointCollecteSpb2> points = new ArrayList<>();
@@ -582,7 +534,7 @@ public class GraphController {
                 String t = tokens[i].trim();
                 if (t.isEmpty()) continue;
                 int cont = Integer.parseInt(t);
-                Sommet s = g.getSommet(i + 1);
+                Sommet s = g.getSommet(i + 1); // 0 = dépôt, 1..N = points
                 points.add(new PointCollecteSpb2(s, cont));
             }
 
@@ -590,7 +542,8 @@ public class GraphController {
                     AlgoTheme2Hyp2.calculerTourneesDetail(g, depot, points, capaciteCamion);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Thème 2 - Hypothèse 2 (").append(contexte).append(")\n");
+            sb.append("Thème 2 - Approche 2 (MST + capacité)\n");
+            sb.append("Contexte : ").append(contexte).append("\n");
             sb.append("Fichier : ").append(fileName).append("\n");
             sb.append("Dépôt : sommet ").append(depot.getId()).append("\n");
             sb.append("Capacité camion : ").append(capaciteCamion).append("\n");
@@ -621,15 +574,144 @@ public class GraphController {
             outputArea.setText(sb.toString());
 
         } catch (NumberFormatException ex) {
-            showError("Erreur de format dans les contenances (utilisez des entiers séparés par des virgules).");
+            showError("Erreur de format dans les contenances (entiers séparés par des virgules).");
         } catch (Exception ex) {
             ex.printStackTrace();
-            outputArea.setText("Erreur Thème 2 Hyp 2 : " + ex.getMessage());
+            outputArea.setText("Erreur Thème 2 MST : " + ex.getMessage());
         }
     }
 
     // =====================================================================
-    // Thème 3 - Hypothèse 1
+    // Thème 1 PB2
+    // =====================================================================
+    private void runPb2CasIdeal(String fileName, String depotText, JTextArea out) {
+        if (fileName == null || fileName.startsWith("(fichier")) {
+            out.setText("Fichier zeroimpairs.txt introuvable.");
+            return;
+        }
+
+        int idDepot;
+        try {
+            idDepot = Integer.parseInt(depotText.trim());
+        } catch (NumberFormatException ex) {
+            showError("L'id du dépôt doit être un entier.");
+            return;
+        }
+
+        try {
+            String path = "data/test/" + fileName;
+            Graphe g = Graphe.chargerGraphe(path);
+            Sommet depot = g.getSommet(idDepot);
+
+            TourneePb2 tournee = Pb2.casIdeal(g, depot);
+            if (tournee == null) {
+                out.setText("Le graphe n'est pas eulérien (cas idéal impossible).");
+                return;
+            }
+
+            String affichage = captureAffichageTourneePb2(tournee);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 1 - PB2 - Cas idéal\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Dépôt : ").append(idDepot).append("\n");
+            sb.append("====================================\n\n");
+            sb.append(affichage);
+
+            out.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            out.setText("Erreur cas idéal : " + ex.getMessage());
+        }
+    }
+
+    private void runPb2Cas2Impairs(String fileName, String depotText, JTextArea out) {
+        if (fileName == null || fileName.startsWith("(fichier")) {
+            out.setText("Fichier deuxsommetimpairs.txt introuvable.");
+            return;
+        }
+
+        int idDepot;
+        try {
+            idDepot = Integer.parseInt(depotText.trim());
+        } catch (NumberFormatException ex) {
+            showError("L'id du dépôt doit être un entier.");
+            return;
+        }
+
+        try {
+            String path = "data/test/" + fileName;
+            Graphe g = Graphe.chargerGraphe(path);
+            Sommet depot = g.getSommet(idDepot);
+
+            TourneePb2 tournee = Pb2.casDeuxImpairs(g, depot);
+            if (tournee == null) {
+                out.setText("Erreur : le graphe n'a pas exactement 2 sommets impairs.");
+                return;
+            }
+
+            String affichage = captureAffichageTourneePb2(tournee);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 1 - PB2 - Cas 2 sommets impairs\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Dépôt : ").append(idDepot).append("\n");
+            sb.append("====================================\n\n");
+            sb.append(affichage);
+
+            out.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            out.setText("Erreur cas 2 impairs : " + ex.getMessage());
+        }
+    }
+
+    private void runPb2CasGeneral(String fileName, String depotText, JTextArea out) {
+        if (fileName == null || fileName.startsWith("(aucun")) {
+            out.setText("Aucun fichier sélectionné.");
+            return;
+        }
+
+        int idDepot;
+        try {
+            idDepot = Integer.parseInt(depotText.trim());
+        } catch (NumberFormatException ex) {
+            showError("L'id du dépôt doit être un entier.");
+            return;
+        }
+
+        try {
+            String path = "data/test/" + fileName;
+            Graphe g = Graphe.chargerGraphe(path);
+            Sommet depot = g.getSommet(idDepot);
+
+            TourneePb2 tournee = Pb2.casGeneral(g, depot);
+            if (tournee == null) {
+                out.setText("Erreur cas général (matching / eulérisation).");
+                return;
+            }
+
+            String affichage = captureAffichageTourneePb2(tournee);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Thème 1 - PB2 - Cas général\n");
+            sb.append("Fichier : ").append(fileName).append("\n");
+            sb.append("Dépôt : ").append(idDepot).append("\n");
+            sb.append("====================================\n\n");
+            sb.append(affichage);
+
+            out.setText(sb.toString());
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            out.setText("Erreur cas général : " + ex.getMessage());
+        }
+    }
+
+    // =====================================================================
+    // Thème 3 H1
     // =====================================================================
     private void runTheme3H1(String fileName, String secteursConfig, JTextArea outputArea) {
         if (fileName == null || fileName.startsWith("(aucun")) {
@@ -644,16 +726,12 @@ public class GraphController {
             GestionsSecteurs gestion = new GestionsSecteurs();
 
             String[] lignes = secteursConfig.split("\\R");
-
             for (String ligne : lignes) {
                 ligne = ligne.trim();
                 if (ligne.isEmpty()) continue;
 
                 String[] parts = ligne.split(":");
-                if (parts.length != 2) {
-                    System.err.println("Ligne secteur invalide : " + ligne);
-                    continue;
-                }
+                if (parts.length != 2) continue;
 
                 int idSecteur = Integer.parseInt(parts[0].trim());
                 Secteur s = new Secteur(idSecteur);
@@ -664,11 +742,7 @@ public class GraphController {
                     if (ss.isEmpty()) continue;
                     int idSommet = Integer.parseInt(ss);
                     Sommet som = g.getSommet(idSommet);
-                    if (som != null) {
-                        s.ajouterSommet(som);
-                    } else {
-                        System.err.println("Sommet " + idSommet + " introuvable dans le graphe !");
-                    }
+                    if (som != null) s.ajouterSommet(som);
                 }
 
                 gestion.ajouterSecteur(s);
@@ -720,13 +794,8 @@ public class GraphController {
     // =====================================================================
     // Utils
     // =====================================================================
-    private void showError(String message) {
-        JOptionPane.showMessageDialog(
-                null,
-                message,
-                "Erreur",
-                JOptionPane.ERROR_MESSAGE
-        );
+    private void showError(String msg) {
+        JOptionPane.showMessageDialog(null, msg, "Erreur", JOptionPane.ERROR_MESSAGE);
     }
 
     private String[] scanTestFiles(String folderPath) {
@@ -734,7 +803,6 @@ public class GraphController {
         if (!folder.exists() || !folder.isDirectory()) {
             return new String[]{"(aucun fichier trouvé)"};
         }
-
         String[] files = folder.list((dir, name) -> new File(dir, name).isFile());
         if (files == null || files.length == 0) {
             return new String[]{"(aucun fichier trouvé)"};
@@ -747,14 +815,12 @@ public class GraphController {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
         System.setOut(ps);
-
         try {
             itineraire.afficher();
         } finally {
             System.out.flush();
             System.setOut(oldOut);
         }
-
         return baos.toString();
     }
 
@@ -763,15 +829,12 @@ public class GraphController {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
         System.setOut(ps);
-
         try {
             tournee.afficher();
         } finally {
             System.out.flush();
             System.setOut(oldOut);
         }
-
         return baos.toString();
     }
 }
-
