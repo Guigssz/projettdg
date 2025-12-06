@@ -195,6 +195,12 @@ public class Graphe {
         return impairs;
     }
 
+    public boolean getOriente(){
+
+        return this.oriente;
+
+    }
+
 
     public List<Liaison> getLiaison(){
         return liaisons;

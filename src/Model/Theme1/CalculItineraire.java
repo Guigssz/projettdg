@@ -28,18 +28,27 @@ public class CalculItineraire {
 
         Sommet fin;
 
-        if (option1 <= option2) {
+        if (g.getOriente()) {
             cheminFinal.addAll(itinDA.getListSommet());
             cheminFinal.add(B);
             fin = B;
             distanceTotale = option1;
-
-        } else {
-            cheminFinal.addAll(itinDB.getListSommet());
-            cheminFinal.add(A);
-            fin = A;
-            distanceTotale = option2;
         }
+        else {
+            if (option1 <= option2) {
+                cheminFinal.addAll(itinDA.getListSommet());
+                cheminFinal.add(B);
+                fin = B;
+                distanceTotale = option1;
+
+            } else {
+                cheminFinal.addAll(itinDB.getListSommet());
+                cheminFinal.add(A);
+                fin = A;
+                distanceTotale = option2;
+            }
+        }
+
 
         // retour au depot
         Itineraire retour = Dijkstra.dijkstra(g, fin, depot);
@@ -70,6 +79,15 @@ public class CalculItineraire {
 
         double option1 = itinDA.getDistanceTotal() + poids; // Depot puis A puis B
         double option2 = itinDB.getDistanceTotal() + poids; // Depot puis B puis A
+
+
+        if (g.getOriente()) {
+            // on DOIT entrer par A
+            List<Sommet> ch = new ArrayList<>(itinDA.getListSommet());
+            ch.add(B);
+            return new Itineraire(depot, B, ch, option1);
+        }
+
 
         //on choisi le meilleur
         if (option1 <= option2) {
@@ -161,7 +179,7 @@ public class CalculItineraire {
         try {
             Scanner sc = new Scanner(System.in);
 
-            String fichier = "data/test/adjmarc.txt";
+            String fichier = "data/test/marcoriente.txt";
             Graphe g = Graphe.chargerGraphe(fichier);
 
             System.out.println("=== Graphe chargé ===");
@@ -212,7 +230,7 @@ public class CalculItineraire {
         try {
             Scanner sc = new Scanner(System.in);
 
-            String fichier = "data/test/adjmarc.txt";
+            String fichier = "data/test/marcoriente.txt";
             Graphe g = Graphe.chargerGraphe(fichier);
 
             System.out.println("=== Graphe chargé ===");

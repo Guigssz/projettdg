@@ -98,7 +98,7 @@ public class PlusProcheVoisin {
 
             Tournee tournee = PlusProcheVoisin.ppv(matDist, depot, points);
 
-            System.out.println("\n===== RÉSULTAT TSP APPROCHE PPV =====");
+            System.out.println("\n===== RÉSULTAT TSP APPROCHE PPV ===== (sans retour)");
             tournee.afficher();
 
 
