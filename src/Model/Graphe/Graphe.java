@@ -95,8 +95,6 @@ public class Graphe {
         adjlist.get(pred).add(l1);
     }
 
-
-
     public Sommet getSommet(int id){
         return sommets.get(id);
     }
@@ -158,7 +156,6 @@ public class Graphe {
         return voisins;
     }
 
-
     public Map<Sommet, List<Liaison>> adjcopyeuler() {
 
         // sans doublon !!!!
@@ -169,7 +166,7 @@ public class Graphe {
         for (Sommet s : adjlist.keySet()) {
             copy.put(s, new ArrayList<>());
         }
-        
+
         for (Liaison l : liaisons) {
             Sommet a = l.getPred();
             Sommet b = l.getSucc();
@@ -181,7 +178,6 @@ public class Graphe {
         return copy;
     }
 
-
     public Liaison getLiaisonAB(Sommet a, Sommet b){
         for (Liaison l : adjlist.get(a)) {
             if (l.getlautre(a).equals(b)) return l;
@@ -189,17 +185,22 @@ public class Graphe {
         return null;
     }
 
+    public List<Sommet> getsommetImparis(){
+        List<Sommet> impairs = new ArrayList<>();
+        for (Sommet s : sommets){
+            if (getVoisins(s).size() % 2 != 0){
+                impairs.add(s);
+            }
+        }
+        return impairs;
+    }
+
+
     public List<Liaison> getLiaison(){
         return liaisons;
     }
 
     public List<Sommet> getSommets() {
         return sommets;
-    }
-
-    public static void main(String[] args){
-
-
-
     }
 }

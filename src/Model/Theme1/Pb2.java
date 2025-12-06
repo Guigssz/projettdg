@@ -1,8 +1,8 @@
 package Model.Theme1;
 
+import Model.Algo.Dijkstra;
 import Model.Graphe.*;
 import Model.ResultatCommun.*;
-import Model.Theme2.Tournee;
 
 import java.util.*;
 
@@ -19,19 +19,37 @@ public class Pb2 {
         }
 
         List<Liaison> cycle = cycleEulerien(g, depot);
-        List<Sommet> ordre = convertirAretesEnSommets(cycle,depot);
+        List<Sommet> ordre = convarretetosommet(cycle,depot);
         double dist = distanceTotale(ordre, g);
 
         return new TourneePb2(depot, ordre, dist);
     }
 
-    // =========== CAS 2 : Deux sommets impairs ===========
+    // cas 2 sommet impairs, faut rajouter des sommets virtuelle
     public static TourneePb2 casDeuxImpairs(Graphe g, Sommet depot) {
-        // 1. Identifier les sommets impairs
-        // 2. Construire chemin eulérien
-        // 3. Ajouter retour au dépôt avec plus court chemin
-        // 4. Construire tournée finale
-        return null;
+
+        // recup les sommets impairs
+        List<Sommet> impairs = g.getsommetImparis();
+        if (impairs.size() != 2) {
+            System.out.println("Erreur : pas exact 2 sommet impaurs");
+            return null;
+        }
+
+        Sommet u = impairs.get(0);
+        Sommet v = impairs.get(1);
+
+        // dijkstra entre les 2
+        Itineraire dij = Dijkstra.dijkstra(g, u, v);
+        List<Sommet> cheminUV = dij.getListSommet();
+
+        List<Liaison> cycle = cycleEulerienAvecChemin(g, depot, cheminUV);
+
+
+        List<Sommet> ordre = convarretetosommet(cycle, depot);
+
+        double dist = distanceTotale(ordre, g);
+
+        return new TourneePb2(depot, ordre, dist);
     }
 
     // =========== CAS 3 : Cas Général (plusieurs impairs) ===========
@@ -76,7 +94,7 @@ public class Pb2 {
         return cycle;
     }
 
-    private static List<Sommet> convertirAretesEnSommets(List<Liaison> cycle, Sommet depot) {
+    private static List<Sommet> convarretetosommet(List<Liaison> cycle, Sommet depot) {
 
         List<Sommet> ordre = new ArrayList<>();
         ordre.add(depot);
@@ -90,6 +108,49 @@ public class Pb2 {
         }
 
         return ordre;
+    }
+
+    private static List<Liaison> cycleEulerienAvecChemin(Graphe g, Sommet depot, List<Sommet> cheminUV){
+
+
+        Map<Sommet, List<Liaison>> adj = g.adjcopyeuler();
+
+        // arrete du ppc entre les 2 sommet imparis
+        for (int i = 0; i < cheminUV.size() - 1; i++) {
+            Sommet a = cheminUV.get(i);
+            Sommet b = cheminUV.get(i+1);
+
+            Liaison l = g.getLiaisonAB(a, b);
+            adj.get(a).add(l);
+            adj.get(b).add(l);
+        }
+
+        // Hierholzer
+        Stack<Sommet> pile = new Stack<>();
+        List<Liaison> cycle = new ArrayList<>();
+
+        pile.push(depot);
+
+        while (!pile.isEmpty()) {
+            Sommet u = pile.peek();
+
+            if (!adj.get(u).isEmpty()) {
+                Liaison e = adj.get(u).remove(0);
+                Sommet v = e.getlautre(u);
+
+                adj.get(v).remove(e);
+                pile.push(v);
+
+            } else {
+                pile.pop();
+                if (!pile.isEmpty()) {
+                    Sommet v = pile.peek();
+                    cycle.add(g.getLiaisonAB(u, v));
+                }
+            }
+        }
+
+        return cycle;
     }
 
     public static void maincasIdeal() {
@@ -126,6 +187,53 @@ public class Pb2 {
 
     }
 
+    public static void maincas2impairs(){
+
+            try {
+
+                Scanner sc = new Scanner(System.in);
+
+                System.out.println("=== TEST CAS 2 : Deux sommets impairs ===");
+
+                String fichier = "data/test/deuxsommetimpairs.txt";
+                Graphe g = Graphe.chargerGraphe(fichier);
+
+                System.out.println("\n=== Graphe chargé ===");
+                g.afficherAdj();
+                System.out.println();
+
+                // verif sommet impairs
+                List<Sommet> impairs = g.getsommetImparis();
+                System.out.println("Sommets impairs : ");
+                for (Sommet s : impairs) System.out.print(s.getId() + " ");
+                System.out.println();
+
+                if (impairs.size() != 2) {
+                    System.out.println("\nerreur pas 2 sommet impairs");
+                    return;
+                }
+
+
+                System.out.print("\nEntrez l'id du depot : ");
+                int idDepot = sc.nextInt();
+                Sommet depot = g.getSommet(idDepot);
+
+                TourneePb2 tournee = Pb2.casDeuxImpairs(g, depot);
+
+
+                if (tournee != null) {
+                    System.out.println("\n=== TOURNEE PB2 - CAS 2 ===");
+                    tournee.afficher();
+                } else {
+                    System.out.println("erreur");
+                }
+
+            } catch (Exception e) {
+                System.err.println("Erreur : " + e.getMessage());
+            }
+
+    }
+
 
     private static double distanceTotale(List<Sommet> ordre, Graphe g) {
         double d = 0;
@@ -145,7 +253,7 @@ public class Pb2 {
 
         System.out.println("=== MENU THEME 1 PB2 ===");
         System.out.println("1. Cas ideal 0 sommet impairs");
-        System.out.println("2. Cas autre");
+        System.out.println("2. Cas 2 sommet impairs");
         System.out.println("3. Cas autre2");
         System.out.print("Votre choix : ");
 
@@ -156,6 +264,7 @@ public class Pb2 {
                 maincasIdeal();
                 break;
             case 2:
+                maincas2impairs();
                 break;
             case 3:
                 break;

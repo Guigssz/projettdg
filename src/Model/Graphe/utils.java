@@ -19,7 +19,7 @@ public class utils {
         // /!\ Marche seulement pour du non orianté
 
         //Faut changer à chaque fois les chemins ici
-        String fichierin = "data/test/zeroimpairs.txt";
+        String fichierin = "data/test/deuxsommetimpairs.txt";
 
         List<String> lines = Files.readAllLines(Paths.get(fichierin));
 
@@ -58,7 +58,7 @@ public class utils {
 
 
         //Faut changer à chaque fois les chemins ici
-        String fichierin = "data/test/zeroimpairs.txt";
+        String fichierin = "data/test/deuxsommetimpairs.txt";
 
         List<List<Integer>> matrice = new ArrayList<>();
 
