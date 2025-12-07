@@ -7,20 +7,8 @@ import Model.ResultatCommun.Itineraire;
 
 import java.util.*;
 
-/**
- * Thème 2 - Hypothèse 2
- *
- * 1. Graphe complet entre {dépôt + points de collecte} avec distances = plus courts chemins
- * 2. MST (Prim)
- * 3. Parcours préfixe du MST -> ordre de visite
- * 4. Découpage par capacité du camion
- * 5. Reconstruction des tournées complètes dans le graphe d'origine
- */
 public class AlgoTheme2Hyp2 {
 
-    // --------------------------------------------------------------------
-    // Type de résultat détaillé : tournée = liste de points + itinéraire
-    // --------------------------------------------------------------------
     public static class TourneeTheme2 {
         private final List<PointCollecteSpb2> points;
         private final Itineraire itineraire;
@@ -47,13 +35,7 @@ public class AlgoTheme2Hyp2 {
         }
     }
 
-    // --------------------------------------------------------------------
-    // PROGRAMMES PRINCIPAUX
-    // --------------------------------------------------------------------
 
-    /**
-     * Version simple : ne renvoie que les itinéraires.
-     */
     public static List<Itineraire> calculerTournees(
             Graphe g,
             Sommet depot,
@@ -68,43 +50,32 @@ public class AlgoTheme2Hyp2 {
         return res;
     }
 
-    /**
-     * Version détaillée : tournée = (liste de points, itinéraire complet).
-     */
+
     public static List<TourneeTheme2> calculerTourneesDetail(
             Graphe g,
             Sommet depot,
             List<PointCollecteSpb2> points,
             int capaciteCamion) {
 
-        // 1. Distances complètes via Dijkstra
         Map<Pair, Integer> distances = construireDistances(g, depot, points);
 
-        // 2. MST (Prim)
         List<Pair> mst = primMST(depot, points, distances);
 
-        // 3. Ordre de visite via DFS préfixe
         List<PointCollecteSpb2> ordre = parcoursPrefixe(depot, mst, points);
 
-        // 4. Découpage selon la capacité
         List<List<PointCollecteSpb2>> tourneesDecoupees =
                 decouper(ordre, capaciteCamion);
 
-        // 5. Reconstruction réelle
         List<Itineraire> itineraires = reconstruireItineraires(g, depot, tourneesDecoupees);
 
-        // 6. Zip points + itinéraires
         List<TourneeTheme2> resultat = new ArrayList<>();
         for (int i = 0; i < tourneesDecoupees.size(); i++) {
             resultat.add(new TourneeTheme2(tourneesDecoupees.get(i), itineraires.get(i)));
         }
-
         return resultat;
     }
 
-    // --------------------------------------------------------------------
-    // 1. Construction des distances via Dijkstra
-    // --------------------------------------------------------------------
+
     private static Map<Pair, Integer> construireDistances(
             Graphe g,
             Sommet depot,
@@ -129,9 +100,7 @@ public class AlgoTheme2Hyp2 {
         return distances;
     }
 
-    // --------------------------------------------------------------------
-    // 2. MST avec Prim
-    // --------------------------------------------------------------------
+
     private static List<Pair> primMST(
             Sommet depot,
             List<PointCollecteSpb2> points,
@@ -171,9 +140,6 @@ public class AlgoTheme2Hyp2 {
         return mst;
     }
 
-    // --------------------------------------------------------------------
-    // 3. Parcours préfixe du MST (DFS)
-    // --------------------------------------------------------------------
     private static List<PointCollecteSpb2> parcoursPrefixe(
             Sommet depot,
             List<Pair> mst,
@@ -220,9 +186,7 @@ public class AlgoTheme2Hyp2 {
         }
     }
 
-    // --------------------------------------------------------------------
-    // 4. Découpage en tournées selon la capacité
-    // --------------------------------------------------------------------
+
     private static List<List<PointCollecteSpb2>> decouper(
             List<PointCollecteSpb2> ordre,
             int C) {
@@ -254,44 +218,30 @@ public class AlgoTheme2Hyp2 {
         return tournees;
     }
 
-    // --------------------------------------------------------------------
-    // 5. Reconstruction réelle des itinéraires
-    // --------------------------------------------------------------------
+
     private static List<Itineraire> reconstruireItineraires(
             Graphe g,
             Sommet depot,
             List<List<PointCollecteSpb2>> tournees) {
-
         List<Itineraire> res = new ArrayList<>();
-
         for (List<PointCollecteSpb2> tournee : tournees) {
-
             Sommet cur = depot;
             List<Sommet> cheminGlobal = new ArrayList<>();
             double distanceTotale = 0.0;
             boolean premierSegment = true;
-
-            // D -> P1 -> P2 -> ... -> Pk
             for (PointCollecteSpb2 pc : tournee) {
                 Itineraire step = Dijkstra.dijkstra(g, cur, pc.getSommet());
                 List<Sommet> cheminStep = step.getListSommet();
-
                 if (cheminStep == null || cheminStep.isEmpty()) continue;
-
                 if (premierSegment) {
-                    // on prend tout le chemin
                     cheminGlobal.addAll(cheminStep);
                     premierSegment = false;
                 } else {
-                    // on évite de répéter le sommet de départ
                     cheminGlobal.addAll(cheminStep.subList(1, cheminStep.size()));
                 }
-
                 distanceTotale += step.getDistanceTotal();
                 cur = pc.getSommet();
             }
-
-            // Retour au dépôt : Pk -> D
             Itineraire retour = Dijkstra.dijkstra(g, cur, depot);
             List<Sommet> cheminRetour = retour.getListSommet();
 
@@ -302,19 +252,13 @@ public class AlgoTheme2Hyp2 {
                     cheminGlobal.addAll(cheminRetour.subList(1, cheminRetour.size()));
                 }
             }
-
             distanceTotale += retour.getDistanceTotal();
-
             Itineraire itin = new Itineraire(depot, depot, cheminGlobal, distanceTotale);
             res.add(itin);
         }
-
         return res;
     }
 
-    // --------------------------------------------------------------------
-    // Utilitaire Pair(a,b)
-    // --------------------------------------------------------------------
     public static class Pair {
         public Sommet a, b;
 

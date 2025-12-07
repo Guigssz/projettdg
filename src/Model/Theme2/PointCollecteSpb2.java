@@ -2,12 +2,6 @@ package Model.Theme2;
 
 import Model.Graphe.Sommet;
 
-/**
- * Représente un point de collecte pour le Thème 2 hypothèse 2.
- * Il encapsule :
- *  - un sommet du graphe routier,
- *  - une contenance (quantité de déchets générée).
- */
 public class PointCollecteSpb2 {
 
     private Sommet sommet;

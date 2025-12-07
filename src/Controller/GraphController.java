@@ -1,7 +1,5 @@
 package Controller;
-
 import View.GraphView;
-
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.io.ByteArrayOutputStream;
@@ -9,7 +7,6 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-
 import Model.Graphe.Graphe;
 import Model.Graphe.Sommet;
 import Model.Graphe.Liaison;
@@ -25,7 +22,7 @@ import Model.Theme1.Encombrant;
 import Model.Theme1.Pb2;
 import Model.Theme1.TourneePb2;
 
-// Thème 2 MST (ex-Hyp2)
+// Thème 2 MST
 import Model.Theme2.AlgoTheme2Hyp2;
 import Model.Theme2.PointCollecteSpb2;
 
@@ -44,7 +41,6 @@ public class GraphController {
     private final GraphView view;
     private String[] allFiles;
 
-    // cache pour la liste d'arêtes en onglet Entreprise
     private Graphe lastGraphEntrepriseEdges;
     private String lastGraphEntrepriseFile;
 
@@ -95,9 +91,8 @@ public class GraphController {
         }
     }
 
-    // =====================================================================
     // ONGLET TEST
-    // =====================================================================
+
     private void onRunClickedTest(ActionEvent e) {
         String fileName = (String) view.fileComboTest.getSelectedItem();
         String algoName = (String) view.algoComboTest.getSelectedItem();
@@ -125,9 +120,8 @@ public class GraphController {
         }
     }
 
-    // =====================================================================
     // ONGLET COLLECTIVITE
-    // =====================================================================
+
     private void onRunClickedCollectivite(ActionEvent e) {
         String fileName = (String) view.fileComboCollectivite.getSelectedItem();
         String algoName = (String) view.algoComboCollectivite.getSelectedItem();
@@ -162,7 +156,7 @@ public class GraphController {
             return;
         }
 
-        // Thème 3 H2 (placeholder)
+        // Thème 3 H2
         if ("Thème 3 - Hypothèse 2".equals(algoName)) {
             view.outputAreaCollectivite.setText("Thème 3 - Hypothèse 2 : pas encore implémenté.");
             return;
@@ -197,9 +191,7 @@ public class GraphController {
         view.fileComboCollectivite.setModel(new DefaultComboBoxModel<>(list.toArray(new String[0])));
     }
 
-    // =====================================================================
     // ONGLET ENTREPRISE
-    // =====================================================================
     private void onRunClickedEntreprise(ActionEvent e) {
         String fileName = (String) view.fileComboEntreprise.getSelectedItem();
         String algoName = (String) view.algoComboEntreprise.getSelectedItem();
@@ -292,7 +284,7 @@ public class GraphController {
         }
     }
 
-    // ---------- Thème 1 PB1 H1 ----------
+    //Thème 1 PB1 H1
     private void runTheme1PB1H1(String fileName) {
         JTextArea out = view.outputAreaEntreprise;
 
@@ -362,7 +354,7 @@ public class GraphController {
         }
     }
 
-    // ---------- Thème 1 PB1 H2 ----------
+    // Thème 1 PB1 H2
     private void runTheme1PB1H2(String fileName) {
         JTextArea out = view.outputAreaEntreprise;
 
@@ -441,7 +433,7 @@ public class GraphController {
         }
     }
 
-    // ---------- Thème 2 - Approche 1 (PPV) ----------
+    //Thème 2 - Approche 1 (PPV)
     private void runTheme2Approche1(String fileName) {
         JTextArea out = view.outputAreaEntreprise;
 
@@ -529,9 +521,7 @@ public class GraphController {
         }
     }
 
-    // =====================================================================
     // DIJKSTRA/BFS pour l’onglet Test
-    // =====================================================================
     private void runItineraire(String fileName,
                                String algoName,
                                String departText,
@@ -589,9 +579,7 @@ public class GraphController {
         }
     }
 
-    // =====================================================================
     // Thème 2 - MST + capacité
-    // =====================================================================
     private void runTheme2MST(String fileName,
                               String capaciteStr,
                               String contenancesStr,
@@ -678,9 +666,7 @@ public class GraphController {
         }
     }
 
-    // =====================================================================
     // Thème 1 PB2
-    // =====================================================================
     private void runPb2CasIdeal(String fileName, String depotText, JTextArea out) {
         if (fileName == null || fileName.startsWith("(fichier")) {
             out.setText("Fichier zeroimpairs.txt introuvable.");
@@ -807,9 +793,7 @@ public class GraphController {
         }
     }
 
-    // =====================================================================
     // Thème 3 H1
-    // =====================================================================
     private void runTheme3H1(String fileName, String secteursConfig, JTextArea outputArea) {
         if (fileName == null || fileName.startsWith("(aucun")) {
             outputArea.setText("Aucun fichier de graphe sélectionné.");
@@ -888,9 +872,7 @@ public class GraphController {
         }
     }
 
-    // =====================================================================
     // Utils
-    // =====================================================================
     private void showError(String msg) {
         JOptionPane.showMessageDialog(null, msg, "Erreur", JOptionPane.ERROR_MESSAGE);
     }

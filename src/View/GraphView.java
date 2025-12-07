@@ -6,10 +6,7 @@ import java.awt.*;
 public class GraphView extends JFrame {
 
     private JTabbedPane tabbedPane;
-
-    // ==========================
     // Onglet TEST
-    // ==========================
     public JComboBox<String> fileComboTest;
     public JComboBox<String> algoComboTest;
     public JTextField departFieldTest;
@@ -21,10 +18,7 @@ public class GraphView extends JFrame {
     public JTextField contenancesFieldTest;
     private JLabel capaciteCamionLabelTest;
     private JLabel contenancesLabelTest;
-
-    // ==========================
     // Onglet COLLECTIVITE
-    // ==========================
     public JComboBox<String> fileComboCollectivite;
     public JComboBox<String> algoComboCollectivite;
     public JTextField departFieldCollectivite;
@@ -42,11 +36,7 @@ public class GraphView extends JFrame {
     public JTextField contenancesFieldCollectivite;
     private JLabel capaciteCamionLabelCollectivite;
     private JLabel contenancesLabelCollectivite;
-
-    // ==========================
     // Onglet ENTREPRISE
-    // ==========================
-    // ----- Onglet ENTREPRISE -----
     public JComboBox<String> fileComboEntreprise;
     public JComboBox<String> algoComboEntreprise;
     public JTextField departFieldEntreprise;
@@ -86,10 +76,7 @@ public class GraphView extends JFrame {
         setSize(950, 650);
         setLocationRelativeTo(null);
     }
-
-    // =====================================================================
     // ONGLET TEST
-    // =====================================================================
     private JPanel buildTestTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
@@ -162,10 +149,7 @@ public class GraphView extends JFrame {
 
         return panel;
     }
-
-    // =====================================================================
     // ONGLET COLLECTIVITE
-    // =====================================================================
     private JPanel buildCollectiviteTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
@@ -273,7 +257,7 @@ public class GraphView extends JFrame {
             arriveeLabelCollectivite.setVisible(false);
             arriveeFieldCollectivite.setVisible(false);
         } else {
-            // Autres cas (ex: Thème 3 H2)
+            // Autres cas
             departLabelCollectivite.setVisible(true);
             departFieldCollectivite.setVisible(true);
             arriveeLabelCollectivite.setVisible(true);
@@ -287,10 +271,7 @@ public class GraphView extends JFrame {
         contenancesLabelCollectivite.setVisible(isTheme3H2);
         contenancesFieldCollectivite.setVisible(isTheme3H2);
     }
-
-    // =====================================================================
     // ONGLET ENTREPRISE
-    // =====================================================================
     private JPanel buildEntrepriseTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
@@ -402,7 +383,7 @@ public class GraphView extends JFrame {
         contenancesLabelEntreprise.setVisible(isMST);
         contenancesFieldEntreprise.setVisible(isMST);
 
-        // Sommet d'arrivée : on le cache pour PB1 H1, PB1 H2, PPV, MST (il ne sert jamais)
+        // Sommet d'arrivée : on le cache
         boolean hideArrival = isPB1 || isPPV || isMST;
         arriveeLabelEntreprise.setVisible(!hideArrival);
         arriveeFieldEntreprise.setVisible(!hideArrival);
