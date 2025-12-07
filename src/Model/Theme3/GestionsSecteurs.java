@@ -29,7 +29,7 @@ public class GestionsSecteurs {
     }
 
     public void calculerAdjacenceSecteurs(Graphe graphePhysique) {
-        // 1. Créer une map pour retrouver rapidement le secteur d'un sommet
+        // 1. Créer une map pour retrouver  le secteur d'un sommet
         Map<Sommet, Secteur> mapSommetSecteur = new HashMap<>();
 
         for (Secteur sec : listeSecteurs) {
@@ -38,7 +38,7 @@ public class GestionsSecteurs {
             }
         }
 
-        // 2. Parcourir toutes les liaisons du graphe physique
+        // 2. Parcourir toutes les liaisons
         for (Liaison l : graphePhysique.getLiaison()) {
             Sommet u = l.getPred();
             Sommet v = l.getSucc();
@@ -48,7 +48,7 @@ public class GestionsSecteurs {
 
 
             if (sU != null && sV != null && !sU.equals(sV)) {
-                // Alors ces secteurs sont voisins
+                // voisins
                 adjacenceSecteurs.get(sU).add(sV);
                 adjacenceSecteurs.get(sV).add(sU);
             }

@@ -29,7 +29,7 @@ public class Secteur {
         }
     }
 
-   
+
 
     public int getId() { return id; }
     public List<Sommet> getSommetsDuSecteur() { return sommetsDuSecteur; }
