@@ -10,10 +10,10 @@ public class Secteur {
     private final List<Sommet> sommetsDuSecteur;
     private int jourCollecte; // La "Couleur" (0=Lundi, 1=Mardi...)
 
-    // Nouveaux champs pour Hypothèse 2
+    //  Hypothèse 2
     private Sommet depot;
-    private double quantiteTotaleDechets; // En kg
-    private int nombreToursCamion; // Combien de fois le camion doit passer
+    private double quantiteTotaleDechets;
+    private int nombreToursCamion;
 
     public Secteur(int id) {
         this.id = id;
@@ -29,7 +29,7 @@ public class Secteur {
         }
     }
 
-    // --- Getters & Setters ---
+   
 
     public int getId() { return id; }
     public List<Sommet> getSommetsDuSecteur() { return sommetsDuSecteur; }

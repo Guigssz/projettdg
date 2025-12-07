@@ -46,11 +46,11 @@ public class GestionsSecteurs {
             Secteur sU = mapSommetSecteur.get(u);
             Secteur sV = mapSommetSecteur.get(v);
 
-            // Si les deux sommets appartiennent à des secteurs et que ce sont des secteurs différents
+
             if (sU != null && sV != null && !sU.equals(sV)) {
                 // Alors ces secteurs sont voisins
                 adjacenceSecteurs.get(sU).add(sV);
-                adjacenceSecteurs.get(sV).add(sU); // Graphe non orienté pour les voisins
+                adjacenceSecteurs.get(sV).add(sU);
             }
         }
     }

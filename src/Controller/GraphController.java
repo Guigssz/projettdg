@@ -510,9 +510,8 @@ public class GraphController {
             sb.append("====================================\n\n");
             sb.append(captureAffichageTourneeTheme2(tournee));
 
-            sb.append("\n(Note : cette approche PPV ne met pas automatiquement le retour au dépôt,\n");
-            sb.append("c'est exactement le comportement de ton main de test.)\n");
-
+            sb.append("\n(Note : cette approche PPV ne met pas automatiquement le retour au dépôt\n");
+            
             out.setText(sb.toString());
 
         } catch (Exception ex) {
