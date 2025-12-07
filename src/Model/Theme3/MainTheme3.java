@@ -11,8 +11,6 @@ public class MainTheme3 {
     public static void main(String[] args) {
         try {
             // Chargement basique
-            // Graphe graphePhysique = Graphe.chargerGraphe("data/test/adjmarc.txt");
-            // ATTENTION : Remets ton fichier ici
             String fichier = "data/test/adjmarc.txt";
             Graphe graphePhysique = Graphe.chargerGraphe(fichier);
 

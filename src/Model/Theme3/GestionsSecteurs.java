@@ -28,11 +28,6 @@ public class GestionsSecteurs {
         return null;
     }
 
-    /**
-     * Cette méthode parcourt toutes les liaisons physiques du graphe routier.
-     * Si une liaison relie un Sommet A (Secteur 1) à un Sommet B (Secteur 2),
-     * alors Secteur 1 et Secteur 2 sont voisins.
-     */
     public void calculerAdjacenceSecteurs(Graphe graphePhysique) {
         // 1. Créer une map pour retrouver rapidement le secteur d'un sommet
         Map<Sommet, Secteur> mapSommetSecteur = new HashMap<>();
