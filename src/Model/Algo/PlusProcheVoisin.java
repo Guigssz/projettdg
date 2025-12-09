@@ -11,11 +11,7 @@ import static Model.Theme1.CalculItineraire.chosirLiaison;
 
 public class PlusProcheVoisin {
 
-    public static Tournee ppv(
-            Map<Sommet, Map<Sommet, Double>> matDist,
-            Sommet depot,
-            List<PointCollecte> pcs)
-    {
+    public static Tournee ppv(Map<Sommet, Map<Sommet, Double>> matDist, Sommet depot, List<PointCollecte> pcs) {
         List<PointCollecte> restants = new ArrayList<>(pcs);
         List<PointCollecte> ordre = new ArrayList<>();
         double total = 0;
@@ -50,7 +46,7 @@ public class PlusProcheVoisin {
 
     public static void main(String[] args) {
 
-        String fichierin = "data/test/marcoriente.txt";
+        String fichierin = "data/test/graph.txt";
 
         try {
             Graphe graphe = Graphe.chargerGraphe(fichierin);

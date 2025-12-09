@@ -58,6 +58,8 @@ public class Pb2 {
 
         List<Sommet> impairs = g.getsommetImparis();
 
+
+        // on renvoi au cas ou dans le smeilleur cas
         if(impairs.size() == 0){
             return casIdeal(g, depot);
         }
@@ -65,11 +67,14 @@ public class Pb2 {
             return casDeuxImpairs(g, depot);
         }
 
+        // matching glouton
         List<Sommet[]> matching = matchersommet(g, impairs);
 
+        // nouveau graph
         Map<Sommet,List<Liaison>> adj = copieEulermatchg(g, matching);
 
-        List<Liaison> cycle = cycleEulerienAvecAdj(adj, depot, g);
+        // avec le nouveau graph
+        List<Liaison> cycle = cycleEulerienadj(adj, depot, g);
 
         List<Sommet> ordre = convarretetosommet(cycle, depot);
 
@@ -206,10 +211,10 @@ public class Pb2 {
                 }
             }
 
-            // Ajouter la paire (u, meilleurV) dans le matching
+
             match.add(new Sommet[]{u, meilleurV});
 
-            // On retire les deux impairs utilisés
+
             restants.remove(u);
             restants.remove(meilleurV);
         }
@@ -225,7 +230,7 @@ public class Pb2 {
             Sommet u = pair[0];
             Sommet v = pair[1];
 
-            // plus court chemin réel entre u et v
+            // plus court chemin entre u et v
             Itineraire it = Dijkstra.dijkstra(g, u, v);
             List<Sommet> chemin = it.getListSommet();
 
@@ -244,7 +249,7 @@ public class Pb2 {
         return adj;
     }
 
-    private static List<Liaison> cycleEulerienAvecAdj(Map<Sommet, List<Liaison>> adj, Sommet depot, Graphe g){
+    private static List<Liaison> cycleEulerienadj(Map<Sommet, List<Liaison>> adj, Sommet depot, Graphe g){
         Stack<Sommet> pile = new Stack<>();
         List<Liaison> cycle = new ArrayList<>();
 
@@ -279,8 +284,6 @@ public class Pb2 {
 
         return cycle;
     }
-
-
 
 
     public static void maincasIdeal() {

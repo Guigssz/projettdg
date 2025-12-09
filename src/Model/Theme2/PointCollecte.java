@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class PointCollecte {
 
-    private final Liaison arete;   // l'arête où se trouve le PC
+    private final Liaison arete;   // l'arete ou ya le point de collecte
 
     public PointCollecte(Liaison arete) {
         this.arete = arete;
@@ -38,7 +38,7 @@ public class PointCollecte {
 
     public static double distPCtoPC(Map<Sommet, Map<Sommet, Double>> matDist, PointCollecte a, PointCollecte b)
     {
-        // Déterminer les points d’entrée possibles en A
+
         Sommet aU = a.getU();
         Sommet aV = a.getV();
         Sommet bU = b.getU();
@@ -47,18 +47,18 @@ public class PointCollecte {
         double La = a.getLongueurArete();
         double Lb = b.getLongueurArete();
 
-        double best = Double.MAX_VALUE;
+        double best = 10000.0;
 
-        // Définir les extrémités valides selon HO1/HO2
+
         Sommet[] entreesA = a.getArete().getOriente()
-                ? new Sommet[]{ aU }              // HO2 : entrée obligatoirement par U
-                : new Sommet[]{ aU, aV };         // HO1 : entrée libre
+                ? new Sommet[]{ aU }
+                : new Sommet[]{ aU, aV };
 
         Sommet[] entreesB = b.getArete().getOriente()
-                ? new Sommet[]{ bU }              // HO2 : entrée obligatoirement par U
-                : new Sommet[]{ bU, bV };         // HO1 : entrée libre
+                ? new Sommet[]{ bU }
+                : new Sommet[]{ bU, bV };
 
-        // Calculer toutes les combinaisons valides
+
         for (Sommet sa : entreesA) {
             for (Sommet sb : entreesB) {
                 double d = matDist.get(sa).get(sb) + La + Lb;

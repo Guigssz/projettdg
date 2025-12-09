@@ -13,13 +13,16 @@ public class CalculItineraire {
 
         // version PAREIL mais avec le  retour au depot en plus
 
+        // recup les extrémités de l'arete de l'encombrant
         Sommet A = e.getLiaison().getPred();
         Sommet B = e.getLiaison().getSucc();
         double poids = e.getLiaison().getPoids();
 
+        // calculer les deux accès possibles avec Dijkstra
         Itineraire itinDA = Dijkstra.dijkstra(g, depot, A);
         Itineraire itinDB = Dijkstra.dijkstra(g, depot, B);
 
+        // cout du parcours de l'arete
         double option1 = itinDA.getDistanceTotal() + poids;
         double option2 = itinDB.getDistanceTotal() + poids;
 
@@ -28,6 +31,7 @@ public class CalculItineraire {
 
         Sommet fin;
 
+        // en fontion de l'orientation
         if (g.getOriente()) {
             cheminFinal.addAll(itinDA.getListSommet());
             cheminFinal.add(B);
@@ -63,7 +67,6 @@ public class CalculItineraire {
 
         return new Itineraire(depot, depot, cheminFinal, distanceTotale);
     }
-
 
     public static Itineraire itineraireVersEncombrant(Graphe g, Sommet depot, Encombrant e) {
 
@@ -166,7 +169,7 @@ public class CalculItineraire {
         // Ajouter la distance du retour
         distanceTotal += retour.getDistanceTotal();
 
-        // Itinéraire final = départ ET arrivée = dépôt
+        // itineraire final
         return new Itineraire(depot, depot, cheminTotal, distanceTotal);
     }
 
